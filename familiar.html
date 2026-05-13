@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-br">
+
 <head>
   <meta charset="UTF-8">
   <title>Estrutura Familiar</title>
@@ -7,44 +8,44 @@
   <link rel="stylesheet" href="style/style.css">
   <script src="script/global_ui.js"></script>
   <link rel="stylesheet" href="style/familiar.css">
-  
+
   <!-- Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
 </head>
 
 <body>
 
-<!-- NAVBAR -->
-<div class="navbar">
+  <!-- NAVBAR -->
+  <div class="navbar">
     <div class="logo">Pace<span>Capital</span></div>
 
-  <div class="menu">
-    <a href="patrimonio.html">Patrimônio</a>
-    <a href="familiar.html" class="active">Estrutura Familiar</a>
-    <a href="evolucao.html">Evolução Patrimonial</a>
-    <a href="tributario.html">Prejuízo Tributário</a>
-    <a href="javascript:void(0)" onclick="limparTudo()" class="btn-limpar">Limpar Tudo</a>
+    <div class="menu">
+      <a href="patrimonio.html">Patrimônio</a>
+      <a href="familiar.html" class="active">Estrutura Familiar</a>
+      <a href="evolucao.html">Evolução Patrimonial</a>
+      <a href="tributario.html">Prejuízo Tributário</a>
+      <a href="javascript:void(0)" onclick="limparTudo()" class="btn-limpar">Limpar Tudo</a>
+    </div>
   </div>
-</div>
 
-<div class="stepper-wrapper reveal">
-  <div class="stepper-item completed">
-    <div class="step-counter">1</div>
-    <div class="step-name">Patrimônio</div>
+  <div class="stepper-wrapper reveal">
+    <div class="stepper-item completed">
+      <div class="step-counter">1</div>
+      <div class="step-name">Patrimônio</div>
+    </div>
+    <div class="stepper-item active">
+      <div class="step-counter">2</div>
+      <div class="step-name">Familiar</div>
+    </div>
+    <div class="stepper-item">
+      <div class="step-counter">3</div>
+      <div class="step-name">Evolução</div>
+    </div>
+    <div class="stepper-item">
+      <div class="step-counter">4</div>
+      <div class="step-name">Tributário</div>
+    </div>
   </div>
-  <div class="stepper-item active">
-    <div class="step-counter">2</div>
-    <div class="step-name">Familiar</div>
-  </div>
-  <div class="stepper-item">
-    <div class="step-counter">3</div>
-    <div class="step-name">Evolução</div>
-  </div>
-  <div class="stepper-item">
-    <div class="step-counter">4</div>
-    <div class="step-name">Tributário</div>
-  </div>
-</div>
 
   <div class="container_global">
     <h1 class="reveal">Estrutura Familiar</h1>
@@ -66,6 +67,8 @@
             <option value="">Selecione</option>
             <option value="solteiro">Solteiro</option>
             <option value="casado">Casado</option>
+            <option value="divorciado">Divorciado</option>
+            <option value="viuvo">Viúvo</option>
           </select>
         </div>
 
@@ -204,7 +207,8 @@
     </div>
   </div>
 
-<script src="script/script_familiar.js"></script>
+  <script src="script/script_familiar.js"></script>
 
 </body>
+
 </html>

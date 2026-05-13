@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pace Capital — Evolução Patrimonial</title>
+
+  <link rel="stylesheet" href="style/style.css">
+  <link rel="stylesheet" href="style/evolucao.css">
+
+  <!-- Chart & Icons -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="script/global_ui.js"></script>
+</head>
+
+<body>
+
+  <!-- NAVBAR -->
+  <div class="navbar">
+    <div class="logo">Pace<span>Capital</span></div>
+
+    <div class="menu">
+      <a href="patrimonio.html">Patrimônio</a>
+      <a href="familiar.html">Estrutura Familiar</a>
+      <a href="evolucao.html" class="active">Evolução Patrimonial</a>
+      <a href="tributario.html">Prejuízo Tributário</a>
+      <a href="javascript:void(0)" onclick="limparTudo()" class="btn-limpar">Limpar Tudo</a>
+    </div>
+  </div>
+
+  <div class="stepper-wrapper reveal">
+    <div class="stepper-item completed">
+      <div class="step-counter">1</div>
+      <div class="step-name">Patrimônio</div>
+    </div>
+    <div class="stepper-item completed">
+      <div class="step-counter">2</div>
+      <div class="step-name">Familiar</div>
+    </div>
+    <div class="stepper-item active">
+      <div class="step-counter">3</div>
+      <div class="step-name">Evolução</div>
+    </div>
+    <div class="stepper-item">
+      <div class="step-counter">4</div>
+      <div class="step-name">Tributário</div>
+    </div>
+  </div>
+
+  <div class="container_global">
+    <h1 class="reveal">Evolução Patrimonial</h1>
+
+    <!-- DASHBOARD DE INSIGHTS (O "WOW" FACTOR) -->
+    <div class="insights-grid reveal delay-1">
+      <div class="insight-card">
+        <div class="insight-icon"><i data-lucide="trending-up"></i></div>
+        <div class="insight-content">
+          <label>Patrimônio Final</label>
+          <h2 id="insight_final">R$ 0</h2>
+        </div>
+      </div>
+      <div class="insight-card">
+        <div class="insight-icon"><i data-lucide="target"></i></div>
+        <div class="insight-content">
+          <label>Multiplicador</label>
+          <h2 id="insight_multiplicador">0.0x</h2>
+        </div>
+      </div>
+      <div class="insight-card highlight">
+        <div class="insight-icon"><i data-lucide="sparkles"></i></div>
+        <div class="insight-content">
+          <label>Renda Mensal Estimada</label>
+          <h2 id="insight_renda">R$ 0</h2>
+          <span class="subtext">A 0.5% ao mês no futuro</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- CONTAINER PRINCIPAL -->
+    <div class="container_evolucao">
+
+      <!-- COLUNA ESQUERDA: CONTROLES INTERATIVOS -->
+      <div class="esquerda card-premium reveal delay-2">
+        <div id="aviso_sem_patrimonio" class="aviso" style="display:none;">
+          ⚠️ Nenhum patrimônio encontrado.<br>
+          <a href="patrimonio.html">Preencha a página de Patrimônio primeiro →</a>
+        </div>
+
+        <div class="control-group">
+          <div class="label-row">
+            <label>Patrimônio Inicial</label>
+            <span class="value-display" id="display_inicial">R$ 0</span>
+          </div>
+          <input type="text" id="valor_inicial" disabled class="input-minimal">
+        </div>
+
+        <div class="control-group">
+          <div class="label-row">
+            <label>Rentabilidade Anual (%)</label>
+          </div>
+          <input type="text" id="taxa" class="input-premium" value="10,00" placeholder="0,00">
+        </div>
+
+        <div class="control-group">
+          <div class="label-row">
+            <label>Aporte Mensal (R$)</label>
+          </div>
+          <input type="text" id="aporte_mensal" class="input-premium" value="0,00" placeholder="0,00">
+        </div>
+
+        <div class="control-group">
+          <div class="label-row">
+            <label>Tempo de Projeção (Anos)</label>
+          </div>
+          <input type="number" id="anos" class="input-premium" value="10" min="1" max="100">
+        </div>
+
+
+        <div class="botoes">
+          <button onclick="calcular()" class="btn-main">Recalcular</button>
+          <button class="btn-secundario" onclick="resetar()">Limpar</button>
+        </div>
+      </div>
+
+      <!-- COLUNA DIREITA: GRÁFICO IMERSIVO -->
+      <div class="direita card-premium reveal delay-3">
+        <div class="chart-header">
+          <h3>Projeção de Longo Prazo</h3>
+          <div class="chart-legend-custom">
+            <div class="legend-item"><span class="dot sua-projecao"></span> Projeção</div>
+            <div class="legend-item"><span class="dot cdi"></span> <span id="legenda_cdi_valor">CDI</span></div>
+            <div class="legend-item"><span class="dot ipca"></span> <span id="legenda_ipca_valor">IPCA</span></div>
+          </div>
+        </div>
+        <div class="grafico-container">
+          <canvas id="graficoEvolucao"></canvas>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- 🔥 SEÇÃO DE INSIGHTS MÁGICOS -->
+    <div class="magic-insights reveal delay-4">
+      <div class="magic-card">
+        <div class="magic-title"><i data-lucide="zap"></i> Insight de Estratégia</div>
+        <p id="magic_text">Ajuste os parâmetros acima para ver como pequenas mudanças no aporte impactam sua liberdade
+          financeira.</p>
+      </div>
+    </div>
+
+    <!-- NAVEGAÇÃO -->
+    <div style="text-align:center; margin: 60px 0;" class="reveal delay-4">
+      <a href="tributario.html" class="btn-next">
+        <span>Próximo Passo: Prejuízo Tributário</span>
+        <i data-lucide="arrow-right"></i>
+      </a>
+    </div>
+  </div>
+
+  <script src="script/script_evolucao.js"></script>
+  <script>
+    lucide.createIcons();
+  </script>
+
+</body>
+
+</html>

@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Estrutura Familiar</title>
+
+  <link rel="stylesheet" href="style/style.css">
+  <script src="script/global_ui.js"></script>
+  <link rel="stylesheet" href="style/familiar.css">
+  
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+
+<!-- NAVBAR -->
+<div class="navbar">
+    <div class="logo">Pace<span>Capital</span></div>
+
+  <div class="menu">
+    <a href="patrimonio.html">Patrimônio</a>
+    <a href="familiar.html" class="active">Estrutura Familiar</a>
+    <a href="evolucao.html">Evolução Patrimonial</a>
+    <a href="tributario.html">Prejuízo Tributário</a>
+    <a href="javascript:void(0)" onclick="limparTudo()" class="btn-limpar">Limpar Tudo</a>
+  </div>
+</div>
+
+<div class="stepper-wrapper reveal">
+  <div class="stepper-item completed">
+    <div class="step-counter">1</div>
+    <div class="step-name">Patrimônio</div>
+  </div>
+  <div class="stepper-item active">
+    <div class="step-counter">2</div>
+    <div class="step-name">Familiar</div>
+  </div>
+  <div class="stepper-item">
+    <div class="step-counter">3</div>
+    <div class="step-name">Evolução</div>
+  </div>
+  <div class="stepper-item">
+    <div class="step-counter">4</div>
+    <div class="step-name">Tributário</div>
+  </div>
+</div>
+
+  <div class="container_global">
+    <h1 class="reveal">Estrutura Familiar</h1>
+
+    <div class="container_familia">
+
+      <!-- BLOCO 1 -->
+      <div class="bloco card-premium reveal delay-1">
+        <h2>Dados do Cliente</h2>
+
+        <div class="input-group">
+          <label>Nome do Cliente</label>
+          <input type="text" id="nome_cliente">
+        </div>
+
+        <div class="input-group">
+          <label>Estado Civil</label>
+          <select id="estado_civil">
+            <option value="">Selecione</option>
+            <option value="solteiro">Solteiro</option>
+            <option value="casado">Casado</option>
+          </select>
+        </div>
+
+        <div id="dados_casamento" style="display:none;">
+          <div class="input-group">
+            <label>Nome do Cônjuge</label>
+            <input type="text" id="nome_conjuge">
+          </div>
+
+          <div class="input-group">
+            <label>Regime de Casamento</label>
+            <select id="regime">
+              <option value="">Selecione</option>
+              <option>Comunhão Parcial de Bens</option>
+              <option>Comunhão Universal de Bens</option>
+              <option>Separação Total de Bens</option>
+              <option>Participação Final nos Aquestos</option>
+            </select>
+          </div>
+
+        </div>
+
+
+        <div class="input-group">
+          <label>Possui filhos?</label>
+          <select id="tem_filhos">
+            <option value="">Selecione</option>
+            <option value="nao">Não</option>
+            <option value="sim">Sim</option>
+          </select>
+        </div>
+
+        <div id="area_filhos" style="display:none;">
+          <div class="input-group">
+            <label>Quantidade de filhos</label>
+            <input type="number" id="qtd_filhos" min="1">
+          </div>
+          <div id="idades_filhos"></div>
+        </div>
+      </div>
+
+      <!-- BLOCO 2 -->
+      <div class="bloco card-premium reveal delay-2">
+        <h2>Herança e Sucessão</h2>
+
+        <div class="input-group">
+          <label>Possui pais vivos? (Ascendentes)</label>
+          <select id="possui_pais">
+            <option value="">Selecione</option>
+            <option value="sim">Sim</option>
+            <option value="nao">Não</option>
+          </select>
+        </div>
+
+        <div id="dados_pais" style="display:none;">
+          <div class="input-group">
+            <label>Quantidade de pais vivos</label>
+            <input type="number" id="qtd_pais" min="1" max="2">
+          </div>
+        </div>
+
+        <hr style="opacity: 0.1; margin: 20px 0;">
+
+        <div class="input-group">
+          <label>Possui irmãos ou parentes? (Colaterais)</label>
+          <select id="possui_colaterais">
+            <option value="">Selecione</option>
+            <option value="sim">Sim</option>
+            <option value="nao">Não</option>
+          </select>
+        </div>
+
+        <div id="dados_colaterais" style="display:none;">
+          <div class="input-group">
+            <label>Quantidade</label>
+            <input type="number" id="qtd_colaterais" min="1">
+          </div>
+
+          <div class="input-group">
+            <label>Tipo</label>
+            <input type="text" id="tipo_colaterais" placeholder="Ex: irmãos, primos, sobrinhos">
+          </div>
+        </div>
+
+        <div id="sucessao_conjuge" style="display:none;">
+          <hr style="opacity: 0.1; margin: 20px 0;">
+          <h4 style="font-size: 11px; color: var(--primary); margin-bottom: 15px;">Herança e Sucessão (Cônjuge)</h4>
+
+          <div class="input-group">
+            <label>Cônjuge possui pais vivos?</label>
+            <select id="conjuge_possui_pais">
+              <option value="">Selecione</option>
+              <option value="sim">Sim</option>
+              <option value="nao">Não</option>
+            </select>
+          </div>
+
+          <div id="dados_pais_conjuge" style="display:none;">
+            <div class="input-group">
+              <label>Qtd. de pais vivos (Cônjuge)</label>
+              <input type="number" id="conjuge_qtd_pais" min="1" max="2">
+            </div>
+          </div>
+
+          <div class="input-group">
+            <label>Cônjuge possui colaterais?</label>
+            <select id="conjuge_possui_colaterais">
+              <option value="">Selecione</option>
+              <option value="sim">Sim</option>
+              <option value="nao">Não</option>
+            </select>
+          </div>
+
+          <div id="dados_colaterais_conjuge" style="display:none;">
+            <div class="input-group">
+              <label>Quantidade (Cônjuge)</label>
+              <input type="number" id="conjuge_qtd_colaterais" min="1">
+            </div>
+            <div class="input-group">
+              <label>Tipo (Cônjuge)</label>
+              <input type="text" id="conjuge_tipo_colaterais" placeholder="Ex: irmãos, sobrinhos">
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- 🔥 BOTÃO -->
+    <div style="text-align:center; margin: 40px 0;">
+      <a href="evolucao.html">
+        <button>
+          Próximo Passo: Evolução Patrimonial
+        </button>
+      </a>
+    </div>
+  </div>
+
+<script src="script/script_familiar.js"></script>
+
+</body>
+</html>

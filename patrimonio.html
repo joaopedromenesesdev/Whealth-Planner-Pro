@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Dashboard Patrimonial</title>
+
+  <link rel="stylesheet" href="style/patrimonio.css">
+  <link rel="icon" type="image/png" href="img/favicon.png">
+  <link rel="stylesheet" href="style/style.css">
+
+  <!-- Chart -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
+  <script src="script/global_ui.js"></script>
+
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+
+  <!-- NAVBAR -->
+  <div class="navbar">
+    <div class="logo">Pace<span>Capital</span></div>
+
+    <div class="menu">
+      <a href="patrimonio.html" class="active">Patrimônio</a>
+      <a href="familiar.html">Estrutura Familiar</a>
+      <a href="evolucao.html">Evolução Patrimonial</a>
+      <a href="tributario.html">Prejuízo Tributário</a>
+      <a href="javascript:void(0)" onclick="limparTudo()" class="btn-limpar">Limpar Tudo</a>
+    </div>
+  </div>
+
+  <div class="stepper-wrapper reveal">
+    <div class="stepper-item active">
+      <div class="step-counter">1</div>
+      <div class="step-name">Patrimônio</div>
+    </div>
+    <div class="stepper-item">
+      <div class="step-counter">2</div>
+      <div class="step-name">Familiar</div>
+    </div>
+    <div class="stepper-item">
+      <div class="step-counter">3</div>
+      <div class="step-name">Evolução</div>
+    </div>
+    <div class="stepper-item">
+      <div class="step-counter">4</div>
+      <div class="step-name">Tributário</div>
+    </div>
+  </div>
+
+  <div class="container_global">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px;">
+      <h1 class="reveal" style="margin: 0;">Análise Patrimonial</h1>
+
+      <div class="reveal" style="display: flex; gap: 10px;">
+        <button onclick="abrirModalColar()" style="background: #0B53B8; padding: 10px 20px; font-size: 14px;">
+          <i class="icon-paste"></i> Colar do Excel
+        </button>
+        <input type="file" id="input_csv" accept=".csv" style="display: none;" onchange="processarCSV(event)">
+        <button onclick="document.getElementById('input_csv').click()"
+          style="background: #1D6F42; padding: 10px 20px; font-size: 14px;">
+          <i class="icon-upload"></i> Importar CSV
+        </button>
+      </div>
+    </div>
+
+    <!-- MODAL PARA COLAR DADOS -->
+    <div id="modal_colar" class="modal-colar" style="display: none;">
+      <div class="modal-colar-content">
+        <h3>Colar Dados do Excel</h3>
+        <p>Selecione as colunas no Excel, copie (Ctrl+C) e cole abaixo:</p>
+        <textarea id="texto_colar" placeholder="Exemplo:&#10;rf  1.000.000&#10;rv  500.000"></textarea>
+        <div style="display: flex; gap: 10px; margin-top: 15px;">
+          <button onclick="processarColagem()" style="flex: 1;">Processar e Preencher</button>
+          <button onclick="fecharModalColar()" style="background: #e1e8f0; color: #333; flex: 1;">Cancelar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- INPUTS -->
+    <div class="container_inputs">
+
+      <!-- APLICAÇÕES -->
+      <div class="bloco card-premium reveal delay-1">
+        <h2>Aplicações Financeiras</h2>
+
+        <div class="input-group">
+          <label>Renda Fixa</label>
+          <div class="input-box"><span>R$</span><input type="text" id="rf"></div>
+        </div>
+
+        <div class="input-group">
+          <label>Renda Variável</label>
+          <div class="input-box"><span>R$</span><input type="text" id="rv"></div>
+        </div>
+
+        <div class="input-group">
+          <label>Alocação Internacional</label>
+          <div class="input-box"><span>R$</span><input type="text" id="inter"></div>
+        </div>
+
+        <div class="input-group">
+          <label>Fundo de Previdência</label>
+          <div class="input-box"><span>R$</span><input type="text" id="prev"></div>
+        </div>
+      </div>
+
+      <!-- IMÓVEIS -->
+      <div class="bloco card-premium reveal delay-2">
+        <h2>Bens Imóveis</h2>
+
+        <div class="input-group">
+          <label>Apartamento</label>
+          <div class="input-box"><span>R$</span><input type="text" id="apt"></div>
+        </div>
+
+        <div class="input-group">
+          <label>Casa</label>
+          <div class="input-box"><span>R$</span><input type="text" id="casa"></div>
+        </div>
+
+        <div class="input-group">
+          <label>Terreno</label>
+          <div class="input-box"><span>R$</span><input type="text" id="terr"></div>
+        </div>
+
+        <div class="input-group">
+          <label>Galpão Comercial</label>
+          <div class="input-box"><span>R$</span><input type="text" id="galp"></div>
+        </div>
+      </div>
+
+      <!-- BENS E EMPRESAS -->
+      <div class="bloco card-premium reveal delay-3" style="display: flex; flex-direction: column; gap: 20px;">
+        <div>
+          <h2>Bens Móveis</h2>
+          <div class="input-group">
+            <label>Bens Gerais</label>
+            <div class="input-box"><span>R$</span><input type="text" id="bens"></div>
+          </div>
+        </div>
+
+        <hr style="opacity: 0.1; margin: 10px 0;">
+
+        <div>
+          <h2>Empresas / Holding</h2>
+          <div class="input-group">
+            <label>Possui empresas?</label>
+            <select id="tem_empresas">
+              <option value="">Selecione</option>
+              <option value="nao">Não</option>
+              <option value="sim">Sim</option>
+            </select>
+          </div>
+
+          <div id="area_empresas" style="display:none;">
+            <label>Qtd. de empresas</label>
+            <input type="number" id="qtd_empresas" min="1">
+            <div id="inputs_empresas"></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- TOTAL -->
+    <div class="total-container">
+      <h2>Patrimônio Total</h2>
+      <p id="total">R$ 0</p>
+    </div>
+
+    <!-- 🔥 BOTÃO -->
+    <div style="text-align:center; margin: 40px 0;">
+      <a href="familiar.html">
+        <button>
+          Próximo Passo: Estrutura Familiar
+        </button>
+      </a>
+    </div>
+
+    <!-- GRÁFICOS -->
+    <div class="graficos">
+      <div class="card card-premium">
+        <h3>Composição Geral</h3>
+        <div class="grafico"><canvas id="g1"></canvas></div>
+        <p style="font-size: 11px; color: var(--text-muted); text-align: center; margin-top: 10px;">
+          💡 Clique nas barras para detalhar
+        </p>
+      </div>
+
+      <div class="card card-premium">
+        <h3>Aplicações</h3>
+        <div class="grafico"><canvas id="g2"></canvas></div>
+      </div>
+
+      <div class="card card-premium">
+        <h3>Imóveis</h3>
+        <div class="grafico"><canvas id="g3"></canvas></div>
+      </div>
+
+      <div class="card card-premium">
+        <h3>Participação Societária</h3>
+        <div class="grafico"><canvas id="g4"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="script/patrimonio.js"></script>
+</body>
+
+</html>

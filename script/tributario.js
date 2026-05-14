@@ -20,6 +20,7 @@ window.onload = function () {
   let rv = parseValor(dados.rv);
   let inter = parseValor(dados.inter);
   let prev = parseValor(dados.prev);
+  let offshore = parseValor(dados.offshore);
 
   let apt = parseValor(dados.apt);
   let casa = parseValor(dados.casa);
@@ -38,7 +39,7 @@ window.onload = function () {
     });
   }
 
-  let totalA = rf + rv + inter + prev;
+  let totalA = rf + rv + inter + prev + offshore;
   let totalI = apt + casa + terr + galp;
 
   criarGraficos(dados);
@@ -267,6 +268,7 @@ function criarGraficos(dados, scope = document) {
   let rv = parseValor(dados.rv);
   let inter = parseValor(dados.inter);
   let prev = parseValor(dados.prev);
+  let offshore = parseValor(dados.offshore);
 
   let apt = parseValor(dados.apt);
   let casa = parseValor(dados.casa);
@@ -288,7 +290,7 @@ function criarGraficos(dados, scope = document) {
     });
   }
 
-  let totalA = rf + rv + inter + prev;
+  let totalA = rf + rv + inter + prev + offshore;
   let totalI = apt + casa + terr + galp;
   let totalGeral = totalA + totalI + bens + totalEmpresas;
 
@@ -318,6 +320,7 @@ function criarGraficos(dados, scope = document) {
   let pRV = totalA ? (rv / totalA) * 100 : 0;
   let pINTER = totalA ? (inter / totalA) * 100 : 0;
   let pPREV = totalA ? (prev / totalA) * 100 : 0;
+  let pOFF = totalA ? (offshore / totalA) * 100 : 0;
 
   const ctxApp = scope.querySelector("#grafico_aplicacoes");
   if (ctxApp) {
@@ -325,8 +328,8 @@ function criarGraficos(dados, scope = document) {
     graficoAplicacoes = new Chart(ctxApp, {
       type: "bar",
       data: {
-        labels: ["Renda Fixa", "Renda Variável", "Internacional", "Previdência"],
-        datasets: [{ data: [pRF, pRV, pINTER, pPREV], backgroundColor: coresPaleta, borderRadius: 6 }]
+        labels: ["Renda Fixa", "Renda Variável", "Fundos de Investimento", "Previdência", "Offshore"],
+        datasets: [{ data: [pRF, pRV, pINTER, pPREV, pOFF], backgroundColor: coresPaleta, borderRadius: 6 }]
       },
       options: baseOptions(true)
     });
@@ -344,7 +347,7 @@ function criarGraficos(dados, scope = document) {
     graficoImoveis = new Chart(ctxImov, {
       type: "bar",
       data: {
-        labels: ["Apartamento", "Casa", "Terreno", "Galpão"],
+        labels: ["Apartamento", "Casa", "Terreno", "Galpão/Imóvel Rural"],
         datasets: [{ data: [pAPT, pCASA, pTERR, pGALP], backgroundColor: coresPaleta, borderRadius: 6 }]
       },
       options: baseOptions(true)
@@ -491,7 +494,8 @@ function calcularPrejuizo() {
   const dadosPatrimonio = JSON.parse(sessionStorage.getItem("patrimonio_dados")) || {};
   const rf = parseValor(dadosPatrimonio.rf);
   const inter = parseValor(dadosPatrimonio.inter);
-  const liquidez = rf + prev + inter;
+  const offshore = parseValor(dadosPatrimonio.offshore);
+  const liquidez = rf + prev + inter + offshore;
   const imobilizado = totalAtual > 0 ? (totalAtual - liquidez) : 0;
 
   const alertaLiquidez = document.getElementById("alerta_liquidez");

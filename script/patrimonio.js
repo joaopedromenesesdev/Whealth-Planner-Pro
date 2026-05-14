@@ -278,8 +278,9 @@ function calcular() {
   let rv = pegar("rv");
   let inter = pegar("inter");
   let prev = pegar("prev");
+  let offshore = pegar("offshore");
 
-  let totalA = rf + rv + inter + prev;
+  let totalA = rf + rv + inter + prev + offshore;
 
   let apt = pegar("apt");
   let casa = pegar("casa");
@@ -320,6 +321,7 @@ function calcular() {
   let pRV = totalA ? (rv / totalA) * 100 : 0;
   let pINTER = totalA ? (inter / totalA) * 100 : 0;
   let pPREV = totalA ? (prev / totalA) * 100 : 0;
+  let pOFF = totalA ? (offshore / totalA) * 100 : 0;
 
   let pAPT = totalI ? (apt / totalI) * 100 : 0;
   let pCASA = totalI ? (casa / totalI) * 100 : 0;
@@ -368,8 +370,8 @@ function calcular() {
   g2 = new Chart(document.getElementById("g2"), {
     type: "bar",
     data: {
-      labels: ["Renda Fixa", "Renda Variável", "Internacional", "Previdência"],
-      datasets: [{ data: [pRF, pRV, pINTER, pPREV], backgroundColor: cor }]
+      labels: ["Renda Fixa", "Renda Variável", "Fundos de Investimento", "Previdência", "Offshore"],
+      datasets: [{ data: [pRF, pRV, pINTER, pPREV, pOFF], backgroundColor: cor }]
     },
     options: baseOptions(true, true)
   });
@@ -377,7 +379,7 @@ function calcular() {
   g3 = new Chart(document.getElementById("g3"), {
     type: "bar",
     data: {
-      labels: ["Apartamento", "Casa", "Terreno", "Galpão"],
+      labels: ["Apartamento", "Casa", "Terreno", "Galpão/Imóvel Rural"],
       datasets: [{ data: [pAPT, pCASA, pTERR, pGALP], backgroundColor: cor }]
     },
     options: baseOptions(true, true)
@@ -414,6 +416,7 @@ function salvarPatrimonio() {
     rv: document.getElementById("rv").value,
     inter: document.getElementById("inter").value,
     prev: document.getElementById("prev").value,
+    offshore: document.getElementById("offshore").value,
 
     apt: document.getElementById("apt").value,
     casa: document.getElementById("casa").value,

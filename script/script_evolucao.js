@@ -11,19 +11,40 @@ let taxasMercado = {
 };
 
 window.onload = async function () {
-  const total = sessionStorage.getItem("total_patrimonio") || 0;
-  const aviso = document.getElementById("aviso_sem_patrimonio");
-
-  if (!total || Number(total) === 0) {
-    aviso.style.display = "block";
-    return;
-  }
-
-  aviso.style.display = "none";
+  // Puxa o total geral e os dados específicos
+  const totalSalvo = sessionStorage.getItem("total_patrimonio");
+  const dadosSalvos = sessionStorage.getItem("patrimonio_dados");
   
-  // Inicializa valores
-  document.getElementById("valor_inicial").value = Number(total).toLocaleString("pt-BR");
-  document.getElementById("display_inicial").innerText = "R$ " + Number(total).toLocaleString("pt-BR");
+  const totalGeral = totalSalvo ? Number(totalSalvo) : 0;
+  const dadosPatrimonio = dadosSalvos ? JSON.parse(dadosSalvos) : {};
+  
+  // Função de parse ultra-robusta
+  const parseV = (v) => {
+    if (!v) return 0;
+    let limpo = String(v).replace(/\s/g, "").replace("R$", "").replace(/\./g, "").replace(",", ".");
+    return parseFloat(limpo) || 0;
+  };
+
+  const valorBensMoveis = parseV(dadosPatrimonio.bens);
+  const totalRentavel = Math.max(0, totalGeral - valorBensMoveis);
+  
+  // Variável global para o cálculo
+  window.patrimonioInicialEvolucao = totalRentavel;
+
+  const aviso = document.getElementById("aviso_sem_patrimonio");
+  // Só mostra o aviso se realmente não houver NADA no sistema
+  if (totalGeral === 0 && Object.keys(dadosPatrimonio).length === 0) {
+    if (aviso) aviso.style.display = "block";
+  } else {
+    if (aviso) aviso.style.display = "none";
+  }
+  
+  // Atualiza os displays na tela
+  const elInputInicial = document.getElementById("valor_inicial");
+  const elDisplayInicial = document.getElementById("display_inicial");
+  
+  if (elInputInicial) elInputInicial.value = totalRentavel.toLocaleString("pt-BR", { minimumFractionDigits: 2 });
+  if (elDisplayInicial) elDisplayInicial.innerText = "R$ " + totalRentavel.toLocaleString("pt-BR", { maximumFractionDigits: 0 });
 
   // Busca Taxas Reais do Banco Central
   await buscarTaxasBCB();
@@ -31,12 +52,20 @@ window.onload = async function () {
   // Configura os Inputs
   setupInputs();
   
-  // Carrega valores salvos se existirem
+  // Carrega persistência de inputs (taxa, anos, etc)
   const salvos = JSON.parse(sessionStorage.getItem("evolucao_inputs"));
+  const premissasGlobais = JSON.parse(sessionStorage.getItem("mercado_premissas"));
+
   if (salvos) {
     if (salvos.taxa) document.getElementById("taxa").value = salvos.taxa;
     if (salvos.aporte) document.getElementById("aporte_mensal").value = salvos.aporte;
     if (salvos.anos) document.getElementById("anos").value = salvos.anos;
+  }
+
+  // Carrega CDI/IPCA da memória global ou da API se for a primeira vez
+  if (premissasGlobais) {
+    if (premissasGlobais.cdi) document.getElementById("cdi_manual").value = premissasGlobais.cdi;
+    if (premissasGlobais.ipca) document.getElementById("ipca_manual").value = premissasGlobais.ipca;
   }
 
   // Primeiro cálculo automático
@@ -83,8 +112,20 @@ async function buscarTaxasBCB() {
     const elCDI = document.getElementById("legenda_cdi_valor");
     const elIPCA = document.getElementById("legenda_ipca_valor");
 
-    if (elCDI) elCDI.innerText = `CDI Proj. (${(taxasMercado.cdi * 100).toFixed(2)}%)`;
-    if (elIPCA) elIPCA.innerText = `IPCA Proj. (${(taxasMercado.ipca * 100).toFixed(2)}%)`;
+    if (elCDI) {
+      elCDI.innerText = `CDI Proj. (${(taxasMercado.cdi * 100).toFixed(2)}%)`;
+      if (!document.getElementById("cdi_manual").value) {
+        document.getElementById("cdi_manual").value = (taxasMercado.cdi * 100).toFixed(2).replace(".", ",");
+      }
+    }
+    if (elIPCA) {
+      elIPCA.innerText = `IPCA Proj. (${(taxasMercado.ipca * 100).toFixed(2)}%)`;
+      if (!document.getElementById("ipca_manual").value) {
+        document.getElementById("ipca_manual").value = (taxasMercado.ipca * 100).toFixed(2).replace(".", ",");
+      }
+    }
+    // Salva na memória global assim que buscar
+    salvarPremissas();
 
   } catch (error) {
     console.error("Erro ao buscar taxas projetadas do Relatório Focus:", error);
@@ -95,13 +136,18 @@ function setupInputs() {
   const inputTaxa = document.getElementById("taxa");
   const inputAporte = document.getElementById("aporte_mensal");
   const inputAnos = document.getElementById("anos");
+  const inputCDI = document.getElementById("cdi_manual");
+  const inputIPCA = document.getElementById("ipca_manual");
 
   // Máscara para Rentabilidade (Percentual)
   inputTaxa.addEventListener("input", function(e) {
     let value = e.target.value.replace(/\D/g, "");
-    value = (value / 100).toFixed(2).replace(".", ",");
-    e.target.value = value;
+    if (value) {
+      value = (Number(value) / 100).toFixed(2).replace(".", ",");
+      e.target.value = value;
+    }
     calcular();
+    salvarInputs();
   });
 
   // Máscara para Aporte Mensal (Moeda)
@@ -110,8 +156,6 @@ function setupInputs() {
     if (value) {
       value = (Number(value) / 100).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
       e.target.value = "R$ " + value;
-    } else {
-      e.target.value = "";
     }
     calcular();
     salvarInputs();
@@ -122,29 +166,54 @@ function setupInputs() {
     salvarInputs();
   });
 
-  inputTaxa.addEventListener("change", salvarInputs);
+  // Novos inputs de mercado (com máscara percentual robusta)
+  [inputCDI, inputIPCA].forEach(input => {
+    if (!input) return;
+    input.addEventListener("input", function(e) {
+      // Remove tudo que não é dígito
+      let value = e.target.value.replace(/\D/g, "");
+      
+      if (value) {
+        // Converte para decimal e formata com vírgula (ex: 1000 -> 10,00)
+        let total = (Number(value) / 100).toFixed(2).replace(".", ",");
+        e.target.value = total;
+      } else {
+        e.target.value = "0,00";
+      }
+      
+      calcular();
+      salvarPremissas();
+    });
+  });
+}
+function salvarInputs() {
+  const taxa = document.getElementById("taxa")?.value;
+  const aporte = document.getElementById("aporte_mensal")?.value;
+  const anos = document.getElementById("anos")?.value;
+  sessionStorage.setItem("evolucao_inputs", JSON.stringify({ taxa, aporte, anos }));
 }
 
-function salvarInputs() {
-  const taxa = document.getElementById("taxa").value;
-  const aporte = document.getElementById("aporte_mensal").value;
-  const anos = document.getElementById("anos").value;
-
-  sessionStorage.setItem("evolucao_inputs", JSON.stringify({ taxa, aporte, anos }));
+function salvarPremissas() {
+  const cdi = document.getElementById("cdi_manual")?.value;
+  const ipca = document.getElementById("ipca_manual")?.value;
+  sessionStorage.setItem("mercado_premissas", JSON.stringify({ cdi, ipca }));
 }
 
 // =========================
 // CÁLCULO CORE
 // =========================
 function parseValue(id) {
-  const val = document.getElementById(id).value;
+  const el = document.getElementById(id);
+  if (!el) return 0;
+  let val = el.value;
   if (!val) return 0;
-  // Remove pontos de milhar e troca vírgula por ponto
-  return Number(val.replace(/\./g, "").replace(",", "."));
+  // Remove R$, espaços, pontos de milhar e troca vírgula por ponto
+  return Number(val.replace(/[R$\s.]/g, "").replace(",", ".")) || 0;
 }
 
 function calcular() {
-  const valorInicial = Number(sessionStorage.getItem("total_patrimonio")) || 0;
+  // Usa o valor pré-calculado (sem bens móveis)
+  const valorInicial = window.patrimonioInicialEvolucao || 0;
   const taxaAnual = parseValue("taxa") / 100;
   const aporteMensal = parseValue("aporte_mensal");
   const anosProjecao = Number(document.getElementById("anos").value);
@@ -166,8 +235,12 @@ function calcular() {
     const anoAtual = (anoBase + i).toString();
     
     // Pega a taxa específica para aquele ano na curva do Focus, ou usa a última conhecida
-    const taxaCDIAnual = taxasMercado.cdiCurva[anoAtual] || taxasMercado.cdi;
-    const taxaIPCAAnual = taxasMercado.ipcaCurva[anoAtual] || taxasMercado.ipca;
+    // OVERRIDE: Se o usuário preencheu o campo manual, usamos o valor fixo dele
+    const manualCDI = parseValue("cdi_manual") / 100;
+    const manualIPCA = parseValue("ipca_manual") / 100;
+
+    const taxaCDIAnual = manualCDI > 0 ? manualCDI : (taxasMercado.cdiCurva[anoAtual] || taxasMercado.cdi);
+    const taxaIPCAAnual = manualIPCA > 0 ? manualIPCA : (taxasMercado.ipcaCurva[anoAtual] || taxasMercado.ipca);
 
     anosArr.push("Ano " + i);
     valoresArr.push(Math.round(valorAcumulado));
@@ -185,10 +258,13 @@ function calcular() {
   let somaCDI = 0;
   let somaIPCA = 0;
   let anosComDados = 0;
+  const manualCDI = parseValue("cdi_manual") / 100;
+  const manualIPCA = parseValue("ipca_manual") / 100;
+
   for (let i = 0; i < anosProjecao; i++) {
     const ano = (anoBase + i).toString();
-    somaCDI += taxasMercado.cdiCurva[ano] || taxasMercado.cdi;
-    somaIPCA += taxasMercado.ipcaCurva[ano] || taxasMercado.ipca;
+    somaCDI += manualCDI > 0 ? manualCDI : (taxasMercado.cdiCurva[ano] || taxasMercado.cdi);
+    somaIPCA += manualIPCA > 0 ? manualIPCA : (taxasMercado.ipcaCurva[ano] || taxasMercado.ipca);
     anosComDados++;
   }
   const mediaCDI = (somaCDI / anosComDados) * 100;

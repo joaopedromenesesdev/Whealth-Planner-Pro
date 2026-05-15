@@ -294,6 +294,26 @@ function criarGraficos(dados, scope = document) {
   let totalI = apt + casa + terr + galp;
   let totalGeral = totalA + totalI + bens + totalEmpresas;
 
+  // Lógica de visibilidade: Esconde se o valor for zero
+  const elApp = scope.querySelector("#container_grafico_aplicacoes");
+  const elImov = scope.querySelector("#container_grafico_imoveis");
+  const elEmp = scope.querySelector("#container_grafico_empresas");
+
+  if (elApp) elApp.style.display = totalA > 0 ? "block" : "none";
+  if (elImov) elImov.style.display = totalI > 0 ? "block" : "none";
+  if (elEmp) elEmp.style.display = totalEmpresas > 0 ? "block" : "none";
+
+  // Inteligência de Layout: Se houver 3 ou mais gráficos, empilha para maior clareza.
+  const grid = scope.querySelector(".graficos-grid");
+  if (grid) {
+    const visiveis = [totalA, totalI, totalEmpresas].filter(v => v > 0).length + 1;
+    if (visiveis >= 3) {
+      grid.classList.add("grid-coluna-unica");
+    } else {
+      grid.classList.remove("grid-coluna-unica");
+    }
+  }
+
   if (totalGeral === 0) return;
 
   // G1 - Geral
@@ -744,10 +764,12 @@ function calcularSegundaMorte(totalOriginal, herancaPrimeira, meacaoPrimeira, va
   const pgSegunda = document.getElementById("pagina_segunda_morte");
   const footerUltima = document.querySelector("#area-relatorio .pagina:last-child .footer-relatorio");
 
-  if (familia.estadoCivil === "solteiro" || valorConjuge <= 0) {
+  if (familia.estadoCivil !== "casado" || valorConjuge <= 0) {
     if (pgSegunda) {
       pgSegunda.style.display = "none";
     }
+    sessionStorage.removeItem("segunda_morte_dados");
+    return; // Encerra aqui se não for casado
   } else {
     if (pgSegunda) {
       pgSegunda.style.display = "block";
@@ -995,14 +1017,15 @@ function recalculaGraficosEspeciaisPDF(total, regime, scope = document) {
 
 
 
-  // Segunda Morte (se houver dados salvos)
+  // Segunda Morte (apenas se for CASADO e houver dados)
+  const dadosFamiliaSM = JSON.parse(sessionStorage.getItem("familia")) || {};
+  const isCasado = dadosFamiliaSM.estadoCivil === "casado";
   const dadosSM = JSON.parse(sessionStorage.getItem("segunda_morte_dados"));
   const canvasSM = scope.querySelector("#grafico_segunda_morte");
-  if (dadosSM && canvasSM) {
-    // Garante que o container esteja visível se houver dados
-    const containerSM = scope.querySelector("#pagina_segunda_morte");
-    if (containerSM) containerSM.style.display = "block";
+  const containerSM = scope.querySelector("#pagina_segunda_morte");
 
+  if (isCasado && dadosSM && canvasSM) {
+    if (containerSM) containerSM.style.display = "block";
     new Chart(canvasSM, {
       type: "doughnut",
       data: {
@@ -1019,6 +1042,8 @@ function recalculaGraficosEspeciaisPDF(total, regime, scope = document) {
         plugins: { legend: { display: false }, datalabels: { display: false } }
       }
     });
+  } else {
+    if (containerSM) containerSM.style.display = "none";
   }
 }
 

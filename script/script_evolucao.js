@@ -14,10 +14,10 @@ window.onload = async function () {
   // Puxa o total geral e os dados específicos
   const totalSalvo = sessionStorage.getItem("total_patrimonio");
   const dadosSalvos = sessionStorage.getItem("patrimonio_dados");
-  
+
   const totalGeral = totalSalvo ? Number(totalSalvo) : 0;
   const dadosPatrimonio = dadosSalvos ? JSON.parse(dadosSalvos) : {};
-  
+
   // Função de parse ultra-robusta
   const parseV = (v) => {
     if (!v) return 0;
@@ -27,7 +27,7 @@ window.onload = async function () {
 
   const valorBensMoveis = parseV(dadosPatrimonio.bens);
   const totalRentavel = Math.max(0, totalGeral - valorBensMoveis);
-  
+
   // Variável global para o cálculo
   window.patrimonioInicialEvolucao = totalRentavel;
 
@@ -38,11 +38,11 @@ window.onload = async function () {
   } else {
     if (aviso) aviso.style.display = "none";
   }
-  
+
   // Atualiza os displays na tela
   const elInputInicial = document.getElementById("valor_inicial");
   const elDisplayInicial = document.getElementById("display_inicial");
-  
+
   if (elInputInicial) elInputInicial.value = totalRentavel.toLocaleString("pt-BR", { minimumFractionDigits: 2 });
   if (elDisplayInicial) elDisplayInicial.innerText = "R$ " + totalRentavel.toLocaleString("pt-BR", { maximumFractionDigits: 0 });
 
@@ -51,7 +51,7 @@ window.onload = async function () {
 
   // Configura os Inputs
   setupInputs();
-  
+
   // Carrega persistência de inputs (taxa, anos, etc)
   const salvos = JSON.parse(sessionStorage.getItem("evolucao_inputs"));
   const premissasGlobais = JSON.parse(sessionStorage.getItem("mercado_premissas"));
@@ -77,14 +77,14 @@ async function buscarTaxasBCB() {
     // API Olinda para Expectativas de Mercado (Relatório Focus)
     // Buscamos as expectativas anuais mais recentes
     const url = "https://olinda.bcb.gov.br/olinda/servico/Expectativas/versao/v1/odata/ExpectativasMercadoAnuais?$filter=Indicador eq 'IPCA' or Indicador eq 'Selic'&$orderby=Data desc&$top=100&$format=json";
-    
+
     const response = await fetch(url);
     const data = await response.json();
-    
+
     if (data && data.value && data.value.length > 0) {
       // 1. Identificamos a data do último relatório publicado
       const dataUltimoRelatorio = data.value[0].Data;
-      
+
       // 2. Filtramos todas as projeções que pertencem a esse último relatório
       const projecoesAtuais = data.value.filter(item => item.Data === dataUltimoRelatorio);
 
@@ -140,7 +140,7 @@ function setupInputs() {
   const inputIPCA = document.getElementById("ipca_manual");
 
   // Máscara para Rentabilidade (Percentual)
-  inputTaxa.addEventListener("input", function(e) {
+  inputTaxa.addEventListener("input", function (e) {
     let value = e.target.value.replace(/\D/g, "");
     if (value) {
       value = (Number(value) / 100).toFixed(2).replace(".", ",");
@@ -151,7 +151,7 @@ function setupInputs() {
   });
 
   // Máscara para Aporte Mensal (Moeda)
-  inputAporte.addEventListener("input", function(e) {
+  inputAporte.addEventListener("input", function (e) {
     let value = e.target.value.replace(/\D/g, "");
     if (value) {
       value = (Number(value) / 100).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -169,10 +169,10 @@ function setupInputs() {
   // Novos inputs de mercado (com máscara percentual robusta)
   [inputCDI, inputIPCA].forEach(input => {
     if (!input) return;
-    input.addEventListener("input", function(e) {
+    input.addEventListener("input", function (e) {
       // Remove tudo que não é dígito
       let value = e.target.value.replace(/\D/g, "");
-      
+
       if (value) {
         // Converte para decimal e formata com vírgula (ex: 1000 -> 10,00)
         let total = (Number(value) / 100).toFixed(2).replace(".", ",");
@@ -180,7 +180,7 @@ function setupInputs() {
       } else {
         e.target.value = "0,00";
       }
-      
+
       calcular();
       salvarPremissas();
     });
@@ -233,7 +233,7 @@ function calcular() {
 
   for (let i = 0; i <= anosProjecao; i++) {
     const anoAtual = (anoBase + i).toString();
-    
+
     // Pega a taxa específica para aquele ano na curva do Focus, ou usa a última conhecida
     // OVERRIDE: Se o usuário preencheu o campo manual, usamos o valor fixo dele
     const manualCDI = parseValue("cdi_manual") / 100;
@@ -322,7 +322,7 @@ function animateValue(id, start, end, duration, suffix = "") {
 
 function generateMagicInsight(taxa, aporte, tempo, totalFinal) {
   const magicText = document.getElementById("magic_text");
-  
+
   if (taxa > 0.12) {
     magicText.innerHTML = "🚀 <b>Perfil Arrojado:</b> Sua rentabilidade projetada está acima da média de mercado. Certifique-se de diversificar ativos para mitigar riscos de volatilidade.";
   } else if (aporte > 10000) {
@@ -435,6 +435,6 @@ function resetar() {
   document.getElementById("taxa").value = "10,00";
   document.getElementById("aporte_mensal").value = "0,00";
   document.getElementById("anos").value = 10;
-  
+
   calcular();
 }

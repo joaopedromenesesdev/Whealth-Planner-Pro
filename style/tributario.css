@@ -359,17 +359,15 @@ body.pdf-exporting {
 
 body.pdf-exporting .pagina {
   margin: 0 !important;
-  margin-bottom: -1px !important;
-  /* Sobreposição para eliminar a linha branca entre páginas */
+  margin-bottom: 0 !important;
   box-shadow: none !important;
   border-radius: 0 !important;
   width: 794px !important;
-  height: auto !important;
-  min-height: 0 !important;
-  max-height: none !important;
+  height: 1123px !important; /* Altura exata do A4 no PDF */
   overflow: hidden !important;
   border: none !important;
-  /* Garante que não haja bordas residuais */
+  position: relative !important;
+  display: block !important;
 }
 
 body.pdf-exporting .pdf-container {

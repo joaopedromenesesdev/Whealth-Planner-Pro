@@ -559,7 +559,8 @@ function calcularPartilha(total, regime) {
 
   let fatias = [];
   let labels = [];
-  let cores = ["#0B53B8", "#1D6F42", "#FFB800", "#E53935", "#6F42C1"];
+  const coresBase = ["#0B53B8", "#1D6F42", "#FFB800", "#E53935", "#6F42C1"];
+  let cores = [];
 
   let meacao = 0;
   let heranca = total;
@@ -665,8 +666,18 @@ function calcularPartilha(total, regime) {
     }
   }
 
-  // SALVA DADOS PARA O PDF
-  sessionStorage.setItem("partilha_dados", JSON.stringify({ labels, fatias }));
+  // Atribui cores consistentes: Cônjuge sempre Azul (0), Filhos em diante
+  labels.forEach((label, i) => {
+    if (label.includes("Cônjuge")) {
+      cores.push(coresBase[0]);
+    } else {
+      // Se não for cônjuge, pega as cores seguintes
+      cores.push(coresBase[(i % (coresBase.length - 1)) + 1] || coresBase[1]);
+    }
+  });
+
+  // SALVA DADOS PARA O PDF (agora com cores)
+  sessionStorage.setItem("partilha_dados", JSON.stringify({ labels, fatias, cores }));
 
   // 3. RENDERIZAR LISTA TEXTUAL
   const lista = document.getElementById("lista_partilha");
@@ -752,7 +763,8 @@ function calcularSegundaMorte(totalOriginal, herancaPrimeira, meacaoPrimeira, va
 
   let fatiasSegunda = [];
   let labelsSegunda = [];
-  let cores = ["#1D6F42", "#0B53B8", "#FFB800", "#E53935", "#6F42C1"];
+  const coresBase = ["#0B53B8", "#1D6F42", "#FFB800", "#E53935", "#6F42C1"];
+  let coresSegunda = [];
 
   // Descrição Estágio 1
   const elT1 = document.getElementById("texto_primeira_morte");
@@ -790,10 +802,17 @@ function calcularSegundaMorte(totalOriginal, herancaPrimeira, meacaoPrimeira, va
     fatiasSegunda.push(totalSegunda);
   }
 
+  // Atribui cores: na segunda morte, como não há cônjuge, pulamos o azul (coresBase[0])
+  // para que o Filho 1 continue sendo Verde (coresBase[1])
+  labelsSegunda.forEach((label, i) => {
+    coresSegunda.push(coresBase[((i + 1) % coresBase.length)] || coresBase[1]);
+  });
+
   // Salva dados para o PDF poder redesenhar no preview
   sessionStorage.setItem("segunda_morte_dados", JSON.stringify({
     labels: labelsSegunda,
-    fatias: fatiasSegunda
+    fatias: fatiasSegunda,
+    cores: coresSegunda
   }));
 
   // Renderizar Estágio 2
@@ -814,7 +833,7 @@ function calcularSegundaMorte(totalOriginal, herancaPrimeira, meacaoPrimeira, va
         labels: labelsSegunda,
         datasets: [{
           data: fatiasSegunda,
-          backgroundColor: cores,
+          backgroundColor: coresSegunda,
           borderWidth: 0
         }]
       },
@@ -841,7 +860,7 @@ function calcularSegundaMorte(totalOriginal, herancaPrimeira, meacaoPrimeira, va
     let html = '<ul style="list-style: none; padding: 0;">';
     labelsSegunda.forEach((label, i) => {
       let pct = (fatiasSegunda[i] / totalSegunda) * 100;
-      html += `<li style="margin-bottom: 10px; padding-left: 15px; border-left: 3px solid ${cores[i % cores.length]}">
+      html += `<li style="margin-bottom: 10px; padding-left: 15px; border-left: 3px solid ${coresSegunda[i % coresSegunda.length]}">
         <strong>${label}:</strong> R$ ${fatiasSegunda[i].toLocaleString("pt-BR", { maximumFractionDigits: 0 })} 
         <span style="opacity: 0.6; font-size: 12px;">(${pct.toFixed(1)}%)</span>
       </li>`;
@@ -962,7 +981,7 @@ function recalculaGraficosEspeciaisPDF(total, regime, scope = document) {
         labels: dadosPartilha.labels,
         datasets: [{
           data: dadosPartilha.fatias,
-          backgroundColor: ["#0B53B8", "#1D6F42", "#FFB800", "#E53935", "#6F42C1", "#00B8D9", "#7A7A7A"]
+          backgroundColor: dadosPartilha.cores || ["#0B53B8", "#1D6F42", "#FFB800", "#E53935", "#6F42C1"]
         }]
       },
       options: {
@@ -990,7 +1009,7 @@ function recalculaGraficosEspeciaisPDF(total, regime, scope = document) {
         labels: dadosSM.labels,
         datasets: [{
           data: dadosSM.fatias,
-          backgroundColor: ["#0B53B8", "#1D6F42", "#FFB800", "#E53935", "#6F42C1"]
+          backgroundColor: dadosSM.cores || ["#1D6F42", "#0B53B8", "#FFB800", "#E53935", "#6F42C1"]
         }]
       },
       options: {
@@ -1056,15 +1075,17 @@ async function gerarPDF() {
     const pdfWidth = pdf.internal.pageSize.getWidth();
     const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
 
-    // Adiciona a imagem ao PDF (tratando múltiplas páginas se necessário)
+    // Adiciona a imagem ao PDF (tratando múltiplas páginas)
+    const pageHeight = pdf.internal.pageSize.getHeight();
     let heightLeft = pdfHeight;
     let position = 0;
-    const pageHeight = pdf.internal.pageSize.getHeight();
 
+    // Primeira página
     pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, pdfHeight);
     heightLeft -= pageHeight;
 
-    while (heightLeft >= 0) {
+    // Páginas seguintes
+    while (heightLeft > 5) { // Tolerância de 5mm para evitar páginas em branco
       position = heightLeft - pdfHeight;
       pdf.addPage();
       pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, pdfHeight);

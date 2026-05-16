@@ -4,8 +4,8 @@
 let grafico;
 
 let taxasMercado = {
-  cdi: 0.1125, // Fallback taxa atual
-  ipca: 0.045, // Fallback taxa atual
+  cdi: 0.0, // Fallback zerado por solicitação
+  ipca: 0.0, // Fallback zerado por solicitação
   cdiCurva: {}, // Armazena expectativas por ano { '2024': 0.10, '2025': 0.09... }
   ipcaCurva: {}
 };
@@ -114,15 +114,11 @@ async function buscarTaxasBCB() {
 
     if (elCDI) {
       elCDI.innerText = `CDI Proj. (${(taxasMercado.cdi * 100).toFixed(2)}%)`;
-      if (!document.getElementById("cdi_manual").value) {
-        document.getElementById("cdi_manual").value = (taxasMercado.cdi * 100).toFixed(2).replace(".", ",");
-      }
+      // Removido preenchimento automático para o assessor escolher
     }
     if (elIPCA) {
       elIPCA.innerText = `IPCA Proj. (${(taxasMercado.ipca * 100).toFixed(2)}%)`;
-      if (!document.getElementById("ipca_manual").value) {
-        document.getElementById("ipca_manual").value = (taxasMercado.ipca * 100).toFixed(2).replace(".", ",");
-      }
+      // Removido preenchimento automático para o assessor escolher
     }
     // Salva na memória global assim que buscar
     salvarPremissas();
@@ -239,8 +235,8 @@ function calcular() {
     const manualCDI = parseValue("cdi_manual") / 100;
     const manualIPCA = parseValue("ipca_manual") / 100;
 
-    const taxaCDIAnual = manualCDI > 0 ? manualCDI : (taxasMercado.cdiCurva[anoAtual] || taxasMercado.cdi);
-    const taxaIPCAAnual = manualIPCA > 0 ? manualIPCA : (taxasMercado.ipcaCurva[anoAtual] || taxasMercado.ipca);
+    const taxaCDIAnual = manualCDI;
+    const taxaIPCAAnual = manualIPCA;
 
     anosArr.push("Ano " + i);
     valoresArr.push(Math.round(valorAcumulado));
@@ -261,14 +257,8 @@ function calcular() {
   const manualCDI = parseValue("cdi_manual") / 100;
   const manualIPCA = parseValue("ipca_manual") / 100;
 
-  for (let i = 0; i < anosProjecao; i++) {
-    const ano = (anoBase + i).toString();
-    somaCDI += manualCDI > 0 ? manualCDI : (taxasMercado.cdiCurva[ano] || taxasMercado.cdi);
-    somaIPCA += manualIPCA > 0 ? manualIPCA : (taxasMercado.ipcaCurva[ano] || taxasMercado.ipca);
-    anosComDados++;
-  }
-  const mediaCDI = (somaCDI / anosComDados) * 100;
-  const mediaIPCA = (somaIPCA / anosComDados) * 100;
+  const mediaCDI = manualCDI * 100;
+  const mediaIPCA = manualIPCA * 100;
 
   // Atualiza legendas com a média do período
   const elCDI = document.getElementById("legenda_cdi_valor");
@@ -435,6 +425,8 @@ function resetar() {
   document.getElementById("taxa").value = "10,00";
   document.getElementById("aporte_mensal").value = "0,00";
   document.getElementById("anos").value = 10;
+  document.getElementById("cdi_manual").value = "0,00";
+  document.getElementById("ipca_manual").value = "0,00";
 
   calcular();
 }

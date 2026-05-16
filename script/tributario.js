@@ -222,11 +222,12 @@ function formatarPercentual(v) {
 // =========================
 // CONFIG BASE DOS GRÁFICOS
 // =========================
-function baseOptions(isPercent = true) {
+function baseOptions(isPercent = true, animationDuration = 1000) {
   return {
     indexAxis: "y",
     responsive: true,
     maintainAspectRatio: false,
+    animation: { duration: animationDuration },
     plugins: {
       legend: { display: false },
       tooltip: {
@@ -307,7 +308,8 @@ function criarGraficos(dados, scope = document) {
   const grid = scope.querySelector(".graficos-grid");
   if (grid) {
     const visiveis = [totalA, totalI, totalEmpresas].filter(v => v > 0).length + 1;
-    if (visiveis >= 3) {
+    // Se houver 2 ou 3 gráficos, empilhamos. Se houver 4, usamos 2 colunas (2x2) para caber na folha.
+    if (visiveis === 2 || visiveis === 3) {
       grid.classList.add("grid-coluna-unica");
     } else {
       grid.classList.remove("grid-coluna-unica");
@@ -315,6 +317,9 @@ function criarGraficos(dados, scope = document) {
   }
 
   if (totalGeral === 0) return;
+  
+  // Determina se deve animar (apenas na tela principal)
+  const anim = scope === document ? 1000 : 0;
 
   // G1 - Geral
   let pA = (totalA / totalGeral) * 100;
@@ -331,7 +336,7 @@ function criarGraficos(dados, scope = document) {
         labels: ["Aplicações", "Imóveis", "Bens", "Empresas"],
         datasets: [{ data: [pA, pI, pB, pE], backgroundColor: coresPaleta, borderRadius: 6 }]
       },
-      options: baseOptions(true)
+      options: baseOptions(true, anim)
     });
   }
 
@@ -351,7 +356,7 @@ function criarGraficos(dados, scope = document) {
         labels: ["Renda Fixa", "Renda Variável", "Fundos de Investimento", "Previdência", "Offshore"],
         datasets: [{ data: [pRF, pRV, pINTER, pPREV, pOFF], backgroundColor: coresPaleta, borderRadius: 6 }]
       },
-      options: baseOptions(true)
+      options: baseOptions(true, anim)
     });
   }
 
@@ -370,7 +375,7 @@ function criarGraficos(dados, scope = document) {
         labels: ["Apartamento", "Casa", "Terreno", "Galpão/Imóvel Rural"],
         datasets: [{ data: [pAPT, pCASA, pTERR, pGALP], backgroundColor: coresPaleta, borderRadius: 6 }]
       },
-      options: baseOptions(true)
+      options: baseOptions(true, anim)
     });
   }
 
@@ -384,7 +389,7 @@ function criarGraficos(dados, scope = document) {
         labels: distribuicaoEmpresas.map((_, i) => "Empresa " + (i + 1)),
         datasets: [{ data: distribuicaoEmpresas, backgroundColor: coresPaleta, borderRadius: 6 }]
       },
-      options: baseOptions(false)
+      options: baseOptions(false, anim)
     });
   }
 }

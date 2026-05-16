@@ -363,8 +363,8 @@ body.pdf-exporting .pagina {
   box-shadow: none !important;
   border-radius: 0 !important;
   width: 794px !important;
-  height: 1123px !important; /* Altura exata do A4 no PDF */
-  overflow: hidden !important;
+  min-height: 1123px !important; /* Permitir que a página cresça se houver muitos gráficos */
+  overflow: visible !important; /* Garantir que o html2canvas capture o conteúdo que transborda */
   border: none !important;
   position: relative !important;
   display: block !important;
@@ -554,13 +554,13 @@ body.pdf-exporting .capa {
 /* Quando houver 3 ou mais gráficos, ficam um embaixo do outro, grandes e centralizados */
 .grid-coluna-unica .grafico-item {
   width: 92% !important;
-  margin: 0 auto 40px auto;
-  padding: 25px;
+  margin: 0 auto 20px auto !important; /* Reduzido de 40px para 20px para caber mais gráficos */
+  padding: 20px !important; /* Reduzido levemente */
 }
 
 .grafico-pdf-sm {
   width: 100%;
-  height: 210px;
+  height: 130px; /* Reduzido para garantir o encaixe na folha A4 */
 }
 
 .estrutura-familiar-pdf {
@@ -695,8 +695,7 @@ body.pdf-exporting .capa {
 
 .grafico-pdf-sm {
   width: 100%;
-  height: 140px;
-  /* Reduzido de 160px para 140px */
+  height: 130px;
   position: relative;
 }
 

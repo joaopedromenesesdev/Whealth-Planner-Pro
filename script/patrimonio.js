@@ -163,7 +163,7 @@ function adicionarEventosEmpresas() {
           let response = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${cnpj}`);
           if (response.ok) {
             let data = await response.json();
-            displayEl.innerHTML = `<i class="icon-check" style="color: #1D6F42"></i> ${data.nome_fantasia || data.razao_social}`;
+            displayEl.innerHTML = `<i class="icon-check" style="color: #1D6F42"></i> ${escapeHTML(data.nome_fantasia || data.razao_social)}`;
 
             // Preenchimento do Valor (Capital Social)
             if (data.capital_social > 0) {
@@ -460,7 +460,7 @@ window.onload = function () {
     dados.empresas.forEach((emp, i) => {
       container.innerHTML += `
         <div class="empresa_item" style="background: #f8faff; padding: 20px; border-radius: 12px; border: 1px dashed rgba(11, 83, 184, 0.2); margin-top: 15px;">
-          <h5 class="empresa_nome_display" style="margin-bottom: 10px; color: #0B53B8; font-size: 14px;">${emp.nome || `Empresa ${i + 1}`}</h5>
+          <h5 class="empresa_nome_display" style="margin-bottom: 10px; color: #0B53B8; font-size: 14px;">${escapeHTML(emp.nome) || `Empresa ${i + 1}`}</h5>
           
           <div class="input-group">
             <label>CNPJ (Autopreenchimento Inteligente)</label>

@@ -72,12 +72,12 @@ function renderizarEstruturaFamiliar() {
 
   // Dados principais
   if (familia.estadoCivil) {
-    html += `<li><strong>Estado Civil:</strong> <span style="text-transform: capitalize;">${familia.estadoCivil}</span></li>`;
+    html += `<li><strong>Estado Civil:</strong> <span style="text-transform: capitalize;">${escapeHTML(familia.estadoCivil)}</span></li>`;
   }
   if (familia.estadoCivil === "casado" && familia.conjuge) {
-    html += `<li><strong>Cônjuge:</strong> ${familia.conjuge}</li>`;
+    html += `<li><strong>Cônjuge:</strong> ${escapeHTML(familia.conjuge)}</li>`;
     if (familia.regime) {
-      html += `<li><strong>Regime de Casamento:</strong> ${familia.regime}</li>`;
+      html += `<li><strong>Regime de Casamento:</strong> ${escapeHTML(familia.regime)}</li>`;
     }
   }
 
@@ -920,7 +920,7 @@ function gerarNarrativaIA(total, prejuizo, regime) {
   if (!el) return;
 
   const familia = JSON.parse(sessionStorage.getItem("familia")) || {};
-  const nome = familia.nome || "do cliente";
+  const nome = escapeHTML(familia.nome) || "do cliente";
   const dadosPat = JSON.parse(sessionStorage.getItem("patrimonio_dados")) || {};
 
   // Identifica a maior classe de ativos

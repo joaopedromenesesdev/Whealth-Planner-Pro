@@ -25,8 +25,8 @@ window.onload = async function () {
     return parseFloat(limpo) || 0;
   };
 
-  const valorBensMoveis = parseV(dadosPatrimonio.bens);
-  const totalRentavel = Math.max(0, totalGeral - valorBensMoveis);
+  // Modificado: O patrimônio base da projeção agora é o patrimônio total bruto (incluindo bens móveis)
+  const totalRentavel = totalGeral;
 
   // Variável global para o cálculo
   window.patrimonioInicialEvolucao = totalRentavel;

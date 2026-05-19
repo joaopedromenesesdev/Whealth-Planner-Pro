@@ -285,11 +285,9 @@ function calcular() {
 // =========================
 function updateDashboard(final, inicial) {
   const multiplicador = final / inicial;
-  const rendaMensal = final * 0.005; // Estimativa de 0.5% ao mês
 
   document.getElementById("insight_final").innerText = "R$ " + final.toLocaleString("pt-BR");
   document.getElementById("insight_multiplicador").innerText = multiplicador.toFixed(1) + "x";
-  document.getElementById("insight_renda").innerText = "R$ " + rendaMensal.toLocaleString("pt-BR");
 
   // Animação de contagem (opcional, mas elegante)
   animateValue("insight_multiplicador", 0, multiplicador, 1000, "x");

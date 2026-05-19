@@ -582,25 +582,30 @@ function calcularPartilha(total, regime) {
   const possuiColaterais = familia.possuiColaterais === "sim";
   const qtdColaterais = Number(familia.qtdColaterais) || 0;
 
+  // Previdência não entra em inventário (isenta/excluída da partilha judicial de meação e herança)
+  const dadosPatrimonio = JSON.parse(sessionStorage.getItem("patrimonio_dados")) || {};
+  const prev = parseValor(dadosPatrimonio.prev);
+  const totalCalculo = Math.max(0, total - prev);
+
   let fatias = [];
   let labels = [];
   const coresBase = ["#0B53B8", "#1D6F42", "#FFB800", "#E53935", "#6F42C1"];
   let cores = [];
 
   let meacao = 0;
-  let heranca = total;
+  let heranca = totalCalculo;
 
   // 1. DEFINIÇÃO DE MEAÇÃO E BASE DA HERANÇA
   if (casado) {
     if (regime.toLowerCase().includes("comunhão parcial") || regime.toLowerCase().includes("comunhão universal")) {
-      meacao = total * 0.5;
-      heranca = total * 0.5;
+      meacao = totalCalculo * 0.5;
+      heranca = totalCalculo * 0.5;
 
       labels.push("Cônjuge (Meação)");
       fatias.push(meacao);
     } else if (regime.toLowerCase().includes("separação total")) {
       meacao = 0;
-      heranca = total;
+      heranca = totalCalculo;
       // Na separação total não há meação
     }
   }
@@ -691,12 +696,20 @@ function calcularPartilha(total, regime) {
     }
   }
 
-  // Atribui cores consistentes: Cônjuge sempre Azul (0), Filhos em diante
+  // Adiciona a Previdência Privada como transmissão direta (mantendo no patrimônio total da partilha)
+  if (prev > 0) {
+    labels.push("Previdência (Transmissão Direta)");
+    fatias.push(prev);
+  }
+
+  // Atribui cores consistentes: Cônjuge sempre Azul (0), Previdência sempre Roxo (4), Filhos em diante
   labels.forEach((label, i) => {
     if (label.includes("Cônjuge")) {
       cores.push(coresBase[0]);
+    } else if (label.includes("Previdência")) {
+      cores.push(coresBase[4]); // Roxo
     } else {
-      // Se não for cônjuge, pega as cores seguintes
+      // Se não for cônjuge nem previdência, pega as cores seguintes
       cores.push(coresBase[(i % (coresBase.length - 1)) + 1] || coresBase[1]);
     }
   });

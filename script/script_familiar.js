@@ -19,6 +19,38 @@ document.getElementById("estado_civil").addEventListener("change", function () {
 
 
 // =========================
+// VERIFICAR COLATERAIS (REGRAS DE SUCESSÃO)
+// =========================
+function verificarColaterais() {
+  let estadoCivil = document.getElementById("estado_civil").value;
+  let temFilhos = document.getElementById("tem_filhos").value;
+  let possuiPais = document.getElementById("possui_pais").value;
+  
+  let divPergunta = document.getElementById("pergunta_colaterais");
+  let divDados = document.getElementById("dados_colaterais");
+  let selectPossui = document.getElementById("possui_colaterais");
+  
+  if (!divPergunta) return;
+
+  if (estadoCivil === "casado" || temFilhos === "sim" || possuiPais === "sim") {
+    divPergunta.style.display = "none";
+    divDados.style.display = "none";
+    selectPossui.value = "";
+  } else {
+    divPergunta.style.display = "block";
+    if (selectPossui.value === "sim") {
+      divDados.style.display = "block";
+    } else {
+      divDados.style.display = "none";
+    }
+  }
+}
+
+document.getElementById("estado_civil").addEventListener("change", verificarColaterais);
+document.getElementById("tem_filhos").addEventListener("change", verificarColaterais);
+document.getElementById("possui_pais").addEventListener("change", verificarColaterais);
+
+// =========================
 // FILHOS (MOSTRAR / ESCONDER)
 // =========================
 document.getElementById("tem_filhos").addEventListener("change", function () {
@@ -250,6 +282,8 @@ window.onload = function () {
   }
   document.getElementById("conjuge_qtd_colaterais").value = dados.conjugeQtdColaterais || "";
   document.getElementById("conjuge_tipo_colaterais").value = dados.conjugeTipoColaterais || "";
+
+  verificarColaterais();
 
   document.querySelectorAll("input, select").forEach(checkFilled);
 };

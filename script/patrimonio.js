@@ -286,8 +286,9 @@ function calcular() {
   let casa = pegar("casa");
   let terr = pegar("terr");
   let galp = pegar("galp");
+  let bens_particulares = pegar("bens_particulares");
 
-  let totalI = apt + casa + terr + galp;
+  let totalI = apt + casa + terr + galp + bens_particulares;
 
   let bens = pegar("bens");
 
@@ -327,6 +328,7 @@ function calcular() {
   let pCASA = totalI ? (casa / totalI) * 100 : 0;
   let pTERR = totalI ? (terr / totalI) * 100 : 0;
   let pGALP = totalI ? (galp / totalI) * 100 : 0;
+  let pBENS_PART = totalI ? (bens_particulares / totalI) * 100 : 0;
 
   if (g1) g1.destroy();
   if (g2) g2.destroy();
@@ -379,8 +381,8 @@ function calcular() {
   g3 = new Chart(document.getElementById("g3"), {
     type: "bar",
     data: {
-      labels: ["Apartamento", "Casa", "Terreno", "Galpão/Imóvel Rural"],
-      datasets: [{ data: [pAPT, pCASA, pTERR, pGALP], backgroundColor: cor }]
+      labels: ["Apartamento", "Casa", "Terreno", "Galpão/Imóvel Rural", "Bens Particulares"],
+      datasets: [{ data: [pAPT, pCASA, pTERR, pGALP, pBENS_PART], backgroundColor: cor }]
     },
     options: baseOptions(true, true)
   });
@@ -422,6 +424,7 @@ function salvarPatrimonio() {
     casa: document.getElementById("casa").value,
     terr: document.getElementById("terr").value,
     galp: document.getElementById("galp").value,
+    bens_particulares: document.getElementById("bens_particulares") ? document.getElementById("bens_particulares").value : "",
 
     bens: document.getElementById("bens").value,
 

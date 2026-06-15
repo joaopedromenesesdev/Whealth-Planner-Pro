@@ -486,12 +486,12 @@ function calcularPrejuizo() {
   // Regra do Regime: Se for Comunhão (Parcial ou Universal), incide sobre 50%
   const multiplicadorRegime = regime.toLowerCase().includes("comunhão") ? 0.5 : 1;
 
-  // Base de Cálculo: Abate a previdência
-  const baseAtual = Math.max(0, totalAtual - prev);
-  const baseProjetada = Math.max(0, totalProjetado - prev);
+  // Base de Cálculo: Abate a previdência e a meação
+  const baseAtual = Math.max(0, totalAtual - prev) * multiplicadorRegime;
+  const baseProjetada = Math.max(0, totalProjetado - prev) * multiplicadorRegime;
 
-  const prejuizoAtual = baseAtual * multiplicadorRegime * (taxaTotal / 100);
-  const prejuizoProjetado = baseProjetada * multiplicadorRegime * (taxaTotal / 100);
+  const prejuizoAtual = baseAtual * (taxaTotal / 100);
+  const prejuizoProjetado = baseProjetada * (taxaTotal / 100);
 
   // Atualiza Tela
   const elVAtual = document.getElementById("prejuizo_atual_valor");
@@ -596,125 +596,98 @@ function calcularPartilha(total, regime) {
   let heranca = totalCalculo;
 
   // 1. DEFINIÇÃO DE MEAÇÃO E BASE DA HERANÇA
+  const regimeL = regime.toLowerCase();
+  const comunhao = regimeL.includes("comunhão parcial") || regimeL.includes("comunhão universal");
+  const separacaoTotal = regimeL.includes("separação total");
+  const participacaoFinal = regimeL.includes("participação final");
+
   if (casado) {
-    if (regime.toLowerCase().includes("comunhão parcial") || regime.toLowerCase().includes("comunhão universal")) {
+    if (comunhao) {
       meacao = totalCalculo * 0.5;
       heranca = totalCalculo * 0.5;
-
       labels.push("Cônjuge (Meação)");
       fatias.push(meacao);
-    } else if (regime.toLowerCase().includes("separação total")) {
+    } else {
       meacao = 0;
       heranca = totalCalculo;
-      // Na separação total não há meação
     }
   }
 
-  // 2. DIVISÃO DA HERANÇA (Regras do Art. 1829 CC)
+  // 2. DIVISÃO DA HERANÇA (CC art. 1.829 e 1.832)
   if (temFilhos && qtdFilhos > 0) {
-    // --- CENÁRIO COM FILHOS ---
-    let partesHeranca = qtdFilhos;
-    let conjugeHerda = false;
-
-    if (casado) {
-      if (regime.toLowerCase().includes("separação total")) {
-        // Concorre em tudo na separação total
-        conjugeHerda = true;
-        // Regra do mínimo de 1/4 se forem filhos comuns (assumimos 1/4 para proteção)
-        partesHeranca = Math.max(qtdFilhos + 1, 4);
-      } else if (regime.toLowerCase().includes("comunhão parcial")) {
-        // Na comunhão parcial, o cônjuge NÃO herda sobre os bens comuns (onde já tem meação)
-        // Como o sistema trata o bolo total, assumimos que ele não concorre na herança
-        conjugeHerda = false;
-      } else if (regime.toLowerCase().includes("comunhão universal")) {
-        // Na comunhão universal, o cônjuge NÃO herda. Só tem a meação.
-        conjugeHerda = false;
-      }
-    }
-
-    if (conjugeHerda) {
-      let valorConjuge = heranca / partesHeranca;
-      // Se houver a regra do 1/4, o cônjuge ganha 25%, e o resto divide pelos filhos
-      if (partesHeranca === 4 && qtdFilhos > 3) {
-        valorConjuge = heranca * 0.25;
-      }
-      labels.push("Cônjuge (Herança)");
-      fatias.push(valorConjuge);
-
-      let sobraFilhos = heranca - (labels.includes("Cônjuge (Herança)") ? valorConjuge : 0);
-      let valorPorFilho = sobraFilhos / qtdFilhos;
-      for (let i = 1; i <= qtdFilhos; i++) {
-        labels.push(`Filho ${i}`);
-        fatias.push(valorPorFilho);
-      }
-    } else {
-      // Cônjuge não herda, herança vai 100% para os filhos
-      let valorPorFilho = heranca / qtdFilhos;
-      for (let i = 1; i <= qtdFilhos; i++) {
-        labels.push(`Filho ${i}`);
-        fatias.push(valorPorFilho);
-      }
-    }
-
-  } else if (possuiPais && qtdPais > 0) {
-    // --- CENÁRIO COM ASCENDENTES (Sem filhos) ---
-    // Cônjuge sempre concorre com ascendentes, independente do regime (Art. 1837)
-    let valorConjuge = 0;
-    let valorPorAscendente = 0;
-
-    if (casado) {
-      if (qtdPais >= 2) {
-        // Se pai e mãe vivos: 1/3 para cada
-        valorConjuge = heranca / 3;
-        valorPorAscendente = heranca / 3;
+    // Se casado, concorre com filhos apenas se não for Separação Total
+    if (casado && !separacaoTotal) {
+      let quotaConjuge, quotaPorFilho;
+      if (qtdFilhos >= 3) {
+        // Garantia de 1/4 da herança para o cônjuge (Art. 1.832)
+        quotaConjuge = heranca * 0.25;
+        quotaPorFilho = (heranca - quotaConjuge) / qtdFilhos;
       } else {
-        // Se apenas um ascendente vivo (ou apenas avós): 50% para o cônjuge
-        valorConjuge = heranca * 0.5;
-        valorPorAscendente = heranca * 0.5;
+        // Divisão igualitária
+        const totalPartes = qtdFilhos + 1;
+        quotaConjuge = heranca / totalPartes;
+        quotaPorFilho = heranca / totalPartes;
       }
+
       labels.push("Cônjuge (Herança)");
-      fatias.push(valorConjuge);
+      fatias.push(quotaConjuge);
+      for (let i = 1; i <= qtdFilhos; i++) {
+        labels.push(`Filho ${i}`);
+        fatias.push(quotaPorFilho);
+      }
     } else {
-      valorPorAscendente = heranca / qtdPais;
+      // Solteiro, divorciado, viúvo, ou regime de Separação Total -> Cônjuge não herda na concorrência com filhos
+      const quotaPorFilho = heranca / qtdFilhos;
+      for (let i = 1; i <= qtdFilhos; i++) {
+        labels.push(`Filho ${i}`);
+        fatias.push(quotaPorFilho);
+      }
     }
-
-    for (let i = 1; i <= qtdPais; i++) {
-      labels.push(`Pai/Mãe ${i}`);
-      fatias.push(valorPorAscendente);
+  } else if (possuiPais && qtdPais > 0) {
+    if (casado) {
+      // Concorrência com ascendentes (Art. 1.829, II e 1.837)
+      const valorParte = heranca / (qtdPais + 1);
+      labels.push("Cônjuge (Herança)");
+      fatias.push(valorParte);
+      for (let i = 1; i <= qtdPais; i++) {
+        labels.push(qtdPais === 2 ? (i === 1 ? "Pai" : "Mãe") : "Ascendente");
+        fatias.push(valorParte);
+      }
+    } else {
+      // Sem cônjuge, herança vai inteira para os pais/ascendentes
+      const valorParte = heranca / qtdPais;
+      for (let i = 1; i <= qtdPais; i++) {
+        labels.push(qtdPais === 2 ? (i === 1 ? "Pai" : "Mãe") : "Ascendente");
+        fatias.push(valorParte);
+      }
     }
-
   } else if (casado) {
-    // --- CENÁRIO APENAS CÔNJUGE ---
+    // Cônjuge herdeiro único (Classe III)
     labels.push("Cônjuge (Herança)");
     fatias.push(heranca);
   } else if (possuiColaterais && qtdColaterais > 0) {
-    // --- CENÁRIO APENAS COLATERAIS ---
-    let valorPorParte = heranca / qtdColaterais;
+    // Colaterais (irmãos, sobrinhos, tios)
+    const valorParte = heranca / qtdColaterais;
     for (let i = 1; i <= qtdColaterais; i++) {
-      labels.push(`Parente Colateral ${i}`);
-      fatias.push(valorPorParte);
+      labels.push(`Colateral ${i}`);
+      fatias.push(valorParte);
     }
+  } else {
+    // Sem herdeiros familiares
+    labels.push("Município / DF / União");
+    fatias.push(heranca);
   }
 
-  // Adiciona a Previdência Privada como transmissão direta (mantendo no patrimônio total da partilha)
-  if (prev > 0) {
-    labels.push("Previdência (Transmissão Direta)");
-    fatias.push(prev);
-  }
-
-  // Atribui cores consistentes: Cônjuge sempre Azul (0), Previdência sempre Roxo (4), Filhos em diante
+  // Atribui cores consistentes: Cônjuge sempre Azul (0), Filhos em diante
   labels.forEach((label, i) => {
     if (label.includes("Cônjuge")) {
       cores.push(coresBase[0]);
-    } else if (label.includes("Previdência")) {
-      cores.push(coresBase[4]); // Roxo
     } else {
-      // Se não for cônjuge nem previdência, pega as cores seguintes
       cores.push(coresBase[(i % (coresBase.length - 1)) + 1] || coresBase[1]);
     }
   });
 
-  // SALVA DADOS PARA O PDF (agora com cores)
+  // SALVA DADOS PARA O PDF
   sessionStorage.setItem("partilha_dados", JSON.stringify({ labels, fatias, cores }));
 
   // 3. RENDERIZAR LISTA TEXTUAL
@@ -728,6 +701,16 @@ function calcularPartilha(total, regime) {
         <span style="opacity: 0.6; font-size: 12px;">(${pct.toFixed(1)}%)</span>
       </li>`;
     });
+    
+    // Adiciona Previdência APENAS na lista textual (fora do gráfico de herança)
+    if (prev > 0) {
+      let pctPrev = (prev / total) * 100;
+      html += `<li style="margin-bottom: 10px; padding-left: 15px; border-left: 3px solid #6F42C1">
+        <strong>Previdência (Transmissão Direta):</strong> R$ ${prev.toLocaleString("pt-BR", { maximumFractionDigits: 0 })} 
+        <span style="opacity: 0.6; font-size: 12px;">(${pctPrev.toFixed(1)}%)</span>
+      </li>`;
+    }
+    
     html += "</ul>";
     lista.innerHTML = html;
   }

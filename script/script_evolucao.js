@@ -46,9 +46,6 @@ window.onload = async function () {
   if (elInputInicial) elInputInicial.value = totalRentavel.toLocaleString("pt-BR", { minimumFractionDigits: 2 });
   if (elDisplayInicial) elDisplayInicial.innerText = "R$ " + totalRentavel.toLocaleString("pt-BR", { maximumFractionDigits: 0 });
 
-  // Busca Taxas Reais do Banco Central
-  await buscarTaxasBCB();
-
   // Configura os Inputs
   setupInputs();
 
@@ -67,6 +64,9 @@ window.onload = async function () {
     if (premissasGlobais.cdi) document.getElementById("cdi_manual").value = premissasGlobais.cdi;
     if (premissasGlobais.ipca) document.getElementById("ipca_manual").value = premissasGlobais.ipca;
   }
+
+  // Busca Taxas Reais do Banco Central
+  await buscarTaxasBCB();
 
   // Primeiro cálculo automático
   calcular();
@@ -120,8 +120,6 @@ async function buscarTaxasBCB() {
       elIPCA.innerText = `IPCA Proj. (${(taxasMercado.ipca * 100).toFixed(2)}%)`;
       // Removido preenchimento automático para o assessor escolher
     }
-    // Salva na memória global assim que buscar
-    salvarPremissas();
 
   } catch (error) {
     console.error("Erro ao buscar taxas projetadas do Relatório Focus:", error);

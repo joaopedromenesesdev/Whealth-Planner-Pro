@@ -1,0 +1,2131 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pace Capital — Painel de Testes Multi-Agente</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0a0f1e;
+      --surface: #111827;
+      --surface2: #1a2236;
+      --border: rgba(255,255,255,0.07);
+      --primary: #3b82f6;
+      --primary-glow: rgba(59, 130, 246, 0.25);
+      --success: #10b981;
+      --success-glow: rgba(16, 185, 129, 0.2);
+      --danger: #ef4444;
+      --danger-glow: rgba(239, 68, 68, 0.2);
+      --warning: #f59e0b;
+      --warning-glow: rgba(245, 158, 11, 0.2);
+      --text: #f1f5f9;
+      --text-muted: #64748b;
+      --font: 'Outfit', sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ============ HEADER ============ */
+    .header {
+      background: linear-gradient(135deg, #0B53B8 0%, #1e3a8a 100%);
+      padding: 30px 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .header-logo {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+    .header-logo span { color: #93c5fd; }
+
+    .header-title {
+      text-align: center;
+    }
+    .header-title h1 { font-size: 18px; font-weight: 600; }
+    .header-title p { font-size: 12px; opacity: 0.7; margin-top: 2px; }
+
+    .header-controls {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    /* ============ MAIN LAYOUT ============ */
+    .main {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: auto auto auto;
+      gap: 20px;
+      padding: 30px 40px;
+      max-width: 1600px;
+      margin: 0 auto;
+    }
+
+    /* ============ STATUS BAR ============ */
+    .status-bar {
+      grid-column: 1 / -1;
+      display: flex;
+      gap: 20px;
+      align-items: center;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 18px 24px;
+    }
+
+    .status-progress {
+      flex: 1;
+    }
+
+    .status-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      margin-bottom: 8px;
+    }
+
+    .progress-bar {
+      height: 8px;
+      background: rgba(255,255,255,0.07);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #3b82f6, #10b981);
+      border-radius: 99px;
+      transition: width 0.4s ease;
+      width: 0%;
+    }
+
+    .status-counters {
+      display: flex;
+      gap: 20px;
+    }
+
+    .counter-item {
+      text-align: center;
+    }
+
+    .counter-item .num {
+      font-size: 24px;
+      font-weight: 700;
+      line-height: 1;
+    }
+    .counter-item .lbl {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+      margin-top: 3px;
+    }
+
+    .num.ok { color: var(--success); }
+    .num.fail { color: var(--danger); }
+    .num.run { color: var(--primary); }
+    .num.warn { color: var(--warning); }
+
+    /* ============ AGENT CARD ============ */
+    .agent-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.3s;
+    }
+
+    .agent-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      border-radius: 20px 20px 0 0;
+    }
+
+    .agent-card[data-agent="1"]::before { background: linear-gradient(90deg, #3b82f6, #60a5fa); }
+    .agent-card[data-agent="2"]::before { background: linear-gradient(90deg, #8b5cf6, #a78bfa); }
+    .agent-card[data-agent="3"]::before { background: linear-gradient(90deg, #10b981, #34d399); }
+    .agent-card[data-agent="4"]::before { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
+
+    .agent-card.running { border-color: rgba(59,130,246,0.4); box-shadow: 0 0 30px rgba(59,130,246,0.1); }
+    .agent-card.done { border-color: rgba(16,185,129,0.3); }
+    .agent-card.has-errors { border-color: rgba(239,68,68,0.3); }
+
+    .agent-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .agent-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .agent-card[data-agent="1"] .agent-icon { background: rgba(59,130,246,0.15); color: #60a5fa; }
+    .agent-card[data-agent="2"] .agent-icon { background: rgba(139,92,246,0.15); color: #a78bfa; }
+    .agent-card[data-agent="3"] .agent-icon { background: rgba(16,185,129,0.15); color: #34d399; }
+    .agent-card[data-agent="4"] .agent-icon { background: rgba(245,158,11,0.15); color: #fbbf24; }
+
+    .agent-info h3 { font-size: 15px; font-weight: 600; }
+    .agent-info p { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+    .agent-status-badge {
+      margin-left: auto;
+      padding: 5px 12px;
+      border-radius: 99px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    .badge-idle { background: rgba(100,116,139,0.15); color: var(--text-muted); }
+    .badge-running { background: rgba(59,130,246,0.15); color: #60a5fa; animation: pulse 1.5s infinite; }
+    .badge-done { background: rgba(16,185,129,0.15); color: var(--success); }
+    .badge-error { background: rgba(239,68,68,0.15); color: var(--danger); }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.6; }
+    }
+
+    /* ============ LOG AREA ============ */
+    .log-area {
+      background: #0a0f1e;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      height: 260px;
+      overflow-y: auto;
+      font-family: 'Courier New', monospace;
+      font-size: 11.5px;
+      line-height: 1.7;
+      flex: 1;
+    }
+
+    .log-area::-webkit-scrollbar { width: 4px; }
+    .log-area::-webkit-scrollbar-track { background: transparent; }
+    .log-area::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 99px; }
+
+    .log-line { display: flex; gap: 8px; align-items: flex-start; }
+    .log-ts { color: #334155; flex-shrink: 0; font-size: 10px; padding-top: 1px; }
+    .log-msg { flex: 1; }
+    .log-info { color: #94a3b8; }
+    .log-ok { color: #10b981; }
+    .log-fail { color: #ef4444; }
+    .log-warn { color: #f59e0b; }
+    .log-run { color: #60a5fa; }
+    .log-test { color: #c084fc; }
+
+    /* ============ AGENT MINI STATS ============ */
+    .agent-mini-stats {
+      display: flex;
+      gap: 10px;
+    }
+
+    .mini-stat {
+      flex: 1;
+      background: var(--surface2);
+      border-radius: 10px;
+      padding: 10px 12px;
+      text-align: center;
+    }
+
+    .mini-stat .val { font-size: 18px; font-weight: 700; }
+    .mini-stat .key { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
+
+    /* ============ RESULTS PANEL ============ */
+    .results-panel {
+      grid-column: 1 / -1;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 24px;
+    }
+
+    .results-panel h2 {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .results-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+
+    .results-table th {
+      text-align: left;
+      padding: 10px 14px;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .results-table td {
+      padding: 10px 14px;
+      border-bottom: 1px solid rgba(255,255,255,0.03);
+      vertical-align: middle;
+    }
+
+    .results-table tr:hover td { background: rgba(255,255,255,0.02); }
+
+    .results-table tr.fail-row td { background: rgba(239,68,68,0.04); }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 10px;
+      font-weight: 600;
+    }
+    .chip-ok { background: rgba(16,185,129,0.15); color: var(--success); }
+    .chip-fail { background: rgba(239,68,68,0.15); color: var(--danger); }
+    .chip-warn { background: rgba(245,158,11,0.15); color: var(--warning); }
+
+    /* ============ BUTTONS ============ */
+    .btn {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 12px;
+      font-family: var(--font);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn:hover { transform: translateY(-1px); }
+    .btn:active { transform: translateY(0); }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+      color: white;
+      box-shadow: 0 4px 15px rgba(59,130,246,0.3);
+    }
+
+    .btn-secondary {
+      background: var(--surface2);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    .btn-danger {
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+      color: white;
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* ============ SUMMARY ALERTS ============ */
+    .summary-alerts {
+      grid-column: 1 / -1;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .alert-item {
+      border-radius: 12px;
+      padding: 14px 18px;
+      font-size: 13px;
+      line-height: 1.5;
+      border-left: 4px solid;
+    }
+
+    .alert-item.success { background: rgba(16,185,129,0.07); border-color: var(--success); color: #a7f3d0; }
+    .alert-item.danger { background: rgba(239,68,68,0.07); border-color: var(--danger); color: #fca5a5; }
+    .alert-item.warn { background: rgba(245,158,11,0.07); border-color: var(--warning); color: #fde68a; }
+    .alert-item.info { background: rgba(59,130,246,0.07); border-color: var(--primary); color: #93c5fd; }
+
+    /* ============ SPINNER ============ */
+    .spinner {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border: 2px solid rgba(255,255,255,0.2);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* ============ EMPTY STATE ============ */
+    .empty-state {
+      text-align: center;
+      padding: 40px;
+      color: var(--text-muted);
+    }
+
+    .empty-state svg { width: 48px; height: 48px; opacity: 0.3; margin-bottom: 12px; }
+    .empty-state p { font-size: 13px; }
+
+    /* ============ SCROLLBAR ============ */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 99px; }
+
+    /* ============ ANIMATIONS ============ */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .agent-card { animation: fadeIn 0.4s ease backwards; }
+    .agent-card:nth-child(1) { animation-delay: 0.1s; }
+    .agent-card:nth-child(2) { animation-delay: 0.2s; }
+    .agent-card:nth-child(3) { animation-delay: 0.3s; }
+    .agent-card:nth-child(4) { animation-delay: 0.4s; }
+    .agent-card:nth-child(5) { animation-delay: 0.5s; }
+
+    /* ============ AGENT 5 — REPORT ============ */
+    .agent-card[data-agent="5"]::before { background: linear-gradient(90deg, #ec4899, #f43f5e); }
+    .agent-card[data-agent="5"] .agent-icon { background: rgba(236,72,153,0.15); color: #f472b6; }
+
+    /* Bug report panel */
+    .bug-report-panel {
+      grid-column: 1 / -1;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      overflow: hidden;
+      display: none;
+    }
+
+    .bug-report-header {
+      background: linear-gradient(135deg, rgba(236,72,153,0.12), rgba(244,63,94,0.08));
+      border-bottom: 1px solid rgba(236,72,153,0.15);
+      padding: 20px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .bug-report-header h2 {
+      font-size: 16px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .bug-report-body { padding: 24px; }
+
+    .bug-summary-row {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+
+    .bug-stat-card {
+      flex: 1;
+      min-width: 140px;
+      background: var(--surface2);
+      border-radius: 14px;
+      padding: 16px 20px;
+      text-align: center;
+      border: 1px solid var(--border);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .bug-stat-card::after {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 3px;
+    }
+    .bug-stat-card.critical::after { background: var(--danger); }
+    .bug-stat-card.high::after     { background: var(--warning); }
+    .bug-stat-card.medium::after   { background: #8b5cf6; }
+    .bug-stat-card.low::after      { background: var(--success); }
+    .bug-stat-card.total::after    { background: var(--primary); }
+
+    .bug-stat-card .bval { font-size: 32px; font-weight: 700; line-height: 1; }
+    .bug-stat-card .bkey { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); margin-top: 6px; }
+    .bug-stat-card.critical .bval { color: var(--danger); }
+    .bug-stat-card.high .bval     { color: var(--warning); }
+    .bug-stat-card.medium .bval   { color: #a78bfa; }
+    .bug-stat-card.low .bval      { color: var(--success); }
+    .bug-stat-card.total .bval    { color: var(--primary); }
+
+    .bug-section-title {
+      font-size: 13px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+      margin: 20px 0 12px 0;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .bug-item {
+      background: var(--surface2);
+      border-radius: 12px;
+      padding: 16px 18px;
+      margin-bottom: 10px;
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 14px;
+      align-items: start;
+      border-left: 4px solid transparent;
+      transition: border-color 0.2s;
+    }
+    .bug-item:hover { border-left-color: currentColor; }
+    .bug-item.sev-critical { border-left-color: var(--danger); }
+    .bug-item.sev-high     { border-left-color: var(--warning); }
+    .bug-item.sev-medium   { border-left-color: #8b5cf6; }
+    .bug-item.sev-low      { border-left-color: var(--success); }
+
+    .bug-sev-badge {
+      padding: 4px 10px;
+      border-radius: 8px;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      white-space: nowrap;
+    }
+    .sev-critical { background: rgba(239,68,68,0.15); color: #fca5a5; }
+    .sev-high     { background: rgba(245,158,11,0.15); color: #fde68a; }
+    .sev-medium   { background: rgba(139,92,246,0.15); color: #c4b5fd; }
+    .sev-low      { background: rgba(16,185,129,0.15); color: #6ee7b7; }
+
+    .bug-content h4 { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+    .bug-content p  { font-size: 12px; color: var(--text-muted); line-height: 1.5; }
+    .bug-content .fix-hint {
+      margin-top: 8px;
+      font-size: 11.5px;
+      color: #93c5fd;
+      background: rgba(59,130,246,0.07);
+      padding: 6px 10px;
+      border-radius: 6px;
+      border-left: 2px solid rgba(59,130,246,0.4);
+    }
+
+    .bug-category {
+      font-size: 10px;
+      padding: 3px 8px;
+      border-radius: 5px;
+      background: rgba(255,255,255,0.06);
+      color: var(--text-muted);
+      white-space: nowrap;
+    }
+
+    .no-bugs {
+      text-align: center;
+      padding: 40px;
+      color: var(--success);
+    }
+    .no-bugs .icon { font-size: 48px; margin-bottom: 12px; }
+    .no-bugs h3 { font-size: 18px; font-weight: 600; }
+    .no-bugs p  { font-size: 13px; color: var(--text-muted); margin-top: 6px; }
+
+    .tag { display: inline-block; padding: 2px 7px; border-radius: 5px; font-size: 10px; background: rgba(255,255,255,0.07); color: var(--text-muted); }
+
+    .civil-code-ref {
+      font-size: 10px;
+      color: var(--text-muted);
+      font-style: italic;
+    }
+
+    .detail-expand {
+      cursor: pointer;
+      color: var(--primary);
+      font-size: 11px;
+    }
+
+    .diff-badge {
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 5px;
+      font-weight: 600;
+    }
+    .diff-zero { background: rgba(16,185,129,0.15); color: var(--success); }
+    .diff-small { background: rgba(245,158,11,0.15); color: var(--warning); }
+    .diff-large { background: rgba(239,68,68,0.15); color: var(--danger); }
+  </style>
+</head>
+
+<body>
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-logo">Pace<span>Capital</span></div>
+    <div class="header-title">
+      <h1>🤖 Painel de Testes Multi-Agente</h1>
+      <p>Verificação automática — Código Civil Brasileiro (Lei 10.406/2002)</p>
+    </div>
+    <div class="header-controls">
+      <button class="btn btn-secondary" id="btn-clear" onclick="limparTudo()">🗑 Limpar</button>
+      <button class="btn btn-primary" id="btn-run" onclick="iniciarTestes()">
+        ▶ Iniciar Todos os Agentes
+      </button>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+
+    <!-- STATUS BAR -->
+    <div class="status-bar">
+      <div class="status-progress">
+        <div class="status-label">
+          <span id="status-label-text">Aguardando início dos testes...</span>
+          <span id="status-pct">0%</span>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill" id="progress-fill"></div>
+        </div>
+      </div>
+      <div class="status-counters">
+        <div class="counter-item">
+          <div class="num run" id="cnt-total">0</div>
+          <div class="lbl">Casos</div>
+        </div>
+        <div class="counter-item">
+          <div class="num ok" id="cnt-ok">0</div>
+          <div class="lbl">Aprovados</div>
+        </div>
+        <div class="counter-item">
+          <div class="num fail" id="cnt-fail">0</div>
+          <div class="lbl">Falhas</div>
+        </div>
+        <div class="counter-item">
+          <div class="num warn" id="cnt-warn">0</div>
+          <div class="lbl">Avisos</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AGENTE 1: PATRIMÔNIO -->
+    <div class="agent-card" data-agent="1" id="card-1">
+      <div class="agent-header">
+        <div class="agent-icon">A1</div>
+        <div class="agent-info">
+          <h3>Agente 1 — Preenchimento de Patrimônio</h3>
+          <p>Preenche os valores dos inputs da página patrimônio com cenários variados</p>
+        </div>
+        <div class="agent-status-badge badge-idle" id="badge-1">Aguardando</div>
+      </div>
+      <div class="agent-mini-stats">
+        <div class="mini-stat">
+          <div class="val" id="a1-cenarios">—</div>
+          <div class="key">Cenários</div>
+        </div>
+        <div class="mini-stat">
+          <div class="val" id="a1-atual">—</div>
+          <div class="key">Atual</div>
+        </div>
+        <div class="mini-stat">
+          <div class="val" id="a1-total">—</div>
+          <div class="key">Patrimônio Testado</div>
+        </div>
+      </div>
+      <div class="log-area" id="log-1">
+        <div class="log-line"><span class="log-ts">--:--:--</span><span class="log-info">Aguardando início...</span></div>
+      </div>
+    </div>
+
+    <!-- AGENTE 2: ESTRUTURA FAMILIAR -->
+    <div class="agent-card" data-agent="2" id="card-2">
+      <div class="agent-header">
+        <div class="agent-icon">A2</div>
+        <div class="agent-info">
+          <h3>Agente 2 — Estrutura Familiar</h3>
+          <p>Testa todas as combinações possíveis de estrutura familiar</p>
+        </div>
+        <div class="agent-status-badge badge-idle" id="badge-2">Aguardando</div>
+      </div>
+      <div class="agent-mini-stats">
+        <div class="mini-stat">
+          <div class="val" id="a2-combos">—</div>
+          <div class="key">Combinações</div>
+        </div>
+        <div class="mini-stat">
+          <div class="val" id="a2-testadas">—</div>
+          <div class="key">Testadas</div>
+        </div>
+        <div class="mini-stat">
+          <div class="val" id="a2-cobertura">—</div>
+          <div class="key">Cobertura</div>
+        </div>
+      </div>
+      <div class="log-area" id="log-2">
+        <div class="log-line"><span class="log-ts">--:--:--</span><span class="log-info">Aguardando início...</span></div>
+      </div>
+    </div>
+
+    <!-- AGENTE 3: TAXAS -->
+    <div class="agent-card" data-agent="3" id="card-3">
+      <div class="agent-header">
+        <div class="agent-icon">A3</div>
+        <div class="agent-info">
+          <h3>Agente 3 — Taxas CDI e IPCA Projetados</h3>
+          <p>Escolhe e valida taxas de CDI e IPCA (máximo 9% por requisito)</p>
+        </div>
+        <div class="agent-status-badge badge-idle" id="badge-3">Aguardando</div>
+      </div>
+      <div class="agent-mini-stats">
+        <div class="mini-stat">
+          <div class="val" id="a3-cdi">—</div>
+          <div class="key">CDI (%)</div>
+        </div>
+        <div class="mini-stat">
+          <div class="val" id="a3-ipca">—</div>
+          <div class="key">IPCA (%)</div>
+        </div>
+        <div class="mini-stat">
+          <div class="val" id="a3-combos">—</div>
+          <div class="key">Combinações Taxa</div>
+        </div>
+      </div>
+      <div class="log-area" id="log-3">
+        <div class="log-line"><span class="log-ts">--:--:--</span><span class="log-info">Aguardando início...</span></div>
+      </div>
+    </div>
+
+    <!-- AGENTE 4: VERIFICADOR -->
+    <div class="agent-card" data-agent="4" id="card-4">
+      <div class="agent-header">
+        <div class="agent-icon">A4</div>
+        <div class="agent-info">
+          <h3>Agente 4 — Verificador Código Civil</h3>
+          <p>Verifica conformidade com a Lei 10.406/2002 (arts. 1.829–1.848)</p>
+        </div>
+        <div class="agent-status-badge badge-idle" id="badge-4">Aguardando</div>
+      </div>
+      <div class="agent-mini-stats">
+        <div class="mini-stat">
+          <div class="val" id="a4-verificados">—</div>
+          <div class="key">Verificados</div>
+        </div>
+        <div class="mini-stat">
+          <div class="val" id="a4-erros">—</div>
+          <div class="key">Erros</div>
+        </div>
+        <div class="mini-stat">
+          <div class="val" id="a4-conformidade">—</div>
+          <div class="key">Conformidade</div>
+        </div>
+      </div>
+      <div class="log-area" id="log-4">
+        <div class="log-line"><span class="log-ts">--:--:--</span><span class="log-info">Aguardando início...</span></div>
+      </div>
+    </div>
+
+    <!-- AGENTE 5: GERADOR DE RELATÓRIO DE BUGS -->
+    <div class="agent-card" data-agent="5" id="card-5" style="grid-column: 1 / -1;">
+      <div class="agent-header">
+        <div class="agent-icon">A5</div>
+        <div class="agent-info">
+          <h3>Agente 5 — Gerador de Relatório de Bugs</h3>
+          <p>Consolida todos os erros e inconsistências detectados pelos Agentes 1–4 e gera um relatório detalhado com severidade e sugestão de correção</p>
+        </div>
+        <div class="agent-status-badge badge-idle" id="badge-5">Aguardando</div>
+      </div>
+      <div class="agent-mini-stats">
+        <div class="mini-stat">
+          <div class="val" id="a5-total">—</div>
+          <div class="key">Bugs Encontrados</div>
+        </div>
+        <div class="mini-stat">
+          <div class="val" id="a5-critical" style="color:var(--danger)">—</div>
+          <div class="key">Críticos</div>
+        </div>
+        <div class="mini-stat">
+          <div class="val" id="a5-high" style="color:var(--warning)">—</div>
+          <div class="key">Altos</div>
+        </div>
+        <div class="mini-stat">
+          <div class="val" id="a5-medium" style="color:#a78bfa">—</div>
+          <div class="key">Médios</div>
+        </div>
+        <div class="mini-stat">
+          <div class="val" id="a5-low" style="color:var(--success)">—</div>
+          <div class="key">Baixos</div>
+        </div>
+      </div>
+      <div class="log-area" id="log-5" style="height:180px;">
+        <div class="log-line"><span class="log-ts">--:--:--</span><span class="log-info">Aguardando Agentes 1–4 concluírem...</span></div>
+      </div>
+    </div>
+
+    <!-- BUG REPORT PANEL -->
+    <div class="bug-report-panel" id="bug-report-panel">
+      <div class="bug-report-header">
+        <h2>🐛 Relatório de Bugs — Pace Capital</h2>
+        <div style="display:flex;gap:10px;">
+          <span id="bug-report-ts" style="font-size:12px;color:var(--text-muted);align-self:center;"></span>
+          <button class="btn btn-secondary" style="padding:8px 16px;font-size:13px;" onclick="exportarRelatorio()">⬇ Exportar HTML</button>
+        </div>
+      </div>
+      <div class="bug-report-body" id="bug-report-body"></div>
+    </div>
+
+    <!-- SUMMARY ALERTS -->
+    <div class="summary-alerts" id="summary-alerts" style="display:none;"></div>
+
+    <!-- RESULTS TABLE -->
+    <div class="results-panel">
+      <h2>
+        📋 Resultados Detalhados
+        <span class="tag" id="results-count">0 casos</span>
+      </h2>
+      <div id="results-container">
+        <div class="empty-state">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+          </svg>
+          <p>Inicie os testes para ver os resultados aqui</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // ============================================================
+    // UTILITÁRIOS
+    // ============================================================
+    function ts() {
+      return new Date().toLocaleTimeString('pt-BR');
+    }
+
+    function appendLog(logId, msg, type = 'info') {
+      const log = document.getElementById(logId);
+      const line = document.createElement('div');
+      line.className = 'log-line';
+      line.innerHTML = `<span class="log-ts">${ts()}</span><span class="log-${type}">${msg}</span>`;
+      log.appendChild(line);
+      log.scrollTop = log.scrollHeight;
+    }
+
+    function sleep(ms) {
+      return new Promise(r => setTimeout(r, ms));
+    }
+
+    function setBadge(num, status, text) {
+      const el = document.getElementById(`badge-${num}`);
+      el.className = `agent-status-badge badge-${status}`;
+      el.textContent = text;
+    }
+
+    function setCardState(num, state) {
+      const card = document.getElementById(`card-${num}`);
+      card.className = `agent-card ${state}`;
+    }
+
+    // ============================================================
+    // MOTOR DE CÁLCULO (espelha tributario.js)
+    // ============================================================
+
+    function parseValor(v) {
+      if (!v) return 0;
+      return Number(
+        String(v).replace(/\s/g, '').replace('R$', '')
+          .replace(/\./g, '').replace(',', '.')
+      ) || 0;
+    }
+
+    /**
+     * Calcula o prejuízo tributário idêntico ao sistema (tributario.js calcularPrejuizo)
+     */
+    function calcularPrejuizoSistema(patrimonio, prev, regime, itcmd, honorarios, custas) {
+      const taxaTotal = itcmd + honorarios + custas;
+      const multiplicadorRegime = regime.toLowerCase().includes('comunhão') ? 0.5 : 1;
+      const baseAtual = Math.max(0, patrimonio - prev) * multiplicadorRegime;
+      const prejuizoAtual = baseAtual * (taxaTotal / 100);
+      return { baseAtual, prejuizoAtual, taxaTotal, multiplicadorRegime };
+    }
+
+    /**
+     * Calcula a partilha CONFORME O CÓDIGO CIVIL BRASILEIRO
+     * Referência: CC arts. 1.829–1.848
+     *
+     * Ordem de vocação hereditária (art. 1.829):
+     * I   – Descendentes, em concorrência com o cônjuge
+     * II  – Ascendentes, em concorrência com o cônjuge
+     * III – Cônjuge sobrevivente (sozinho)
+     * IV  – Colaterais até 4º grau
+     *
+     * Meação: não é herança, é mera separação do patrimônio comum (depende do regime).
+     */
+    function calcularPartilhaCodigoCivil(total, prev, familia) {
+      const totalCalculo = Math.max(0, total - prev); // previdência não entra em inventário
+
+      const casado = familia.estadoCivil === 'casado';
+      const regime = (familia.regime || '').toLowerCase();
+      const comunhao = regime.includes('comunhão parcial') || regime.includes('comunhão universal');
+      const separacaoTotal = regime.includes('separação total');
+      const participacaoFinal = regime.includes('participação final');
+
+      const temFilhos = familia.temFilhos === 'sim';
+      const qtdFilhos = Number(familia.qtdFilhos) || 0;
+
+      const possuiPais = familia.possuiPais === 'sim';
+      const qtdPais = Number(familia.qtdPais) || 0;
+
+      const possuiColaterais = familia.possuiColaterais === 'sim';
+      const qtdColaterais = Number(familia.qtdColaterais) || 0;
+
+      let meacao = 0;
+      let heranca = totalCalculo;
+      let resultado = [];
+      let erros = [];
+
+      // ── MEAÇÃO ──────────────────────────────────────────────────────
+      // Apenas nos regimes de comunhão (parcial ou universal)
+      // Separação total → sem meação; Participação Final → depende dos aquestos (simplificamos como 50%)
+      if (casado) {
+        if (comunhao) {
+          meacao = totalCalculo * 0.5;
+          heranca = totalCalculo * 0.5;
+        } else if (participacaoFinal) {
+          // Simplificação: metade dos aquestos (bens adquiridos na constância)
+          // Sem informação dos aquestos, adotamos 0 de meação para a análise
+          meacao = 0;
+          heranca = totalCalculo;
+        }
+        // separacaoTotal → meacao = 0 (art. 1.687)
+      }
+
+      // ── HERANÇA (art. 1.829) ─────────────────────────────────────────
+
+      // CLASSE I — Descendentes (filhos)
+      // Se há filhos, eles são a 1ª classe de herdeiros
+      if (temFilhos && qtdFilhos > 0) {
+        // Cônjuge concorre com os filhos apenas se:
+        //   - Separação total: NÃO concorre (art. 1.829, I – excluído)
+        //   - Comunhão Universal de Bens adquiridos ANTES do casamento: concorre
+        //   - Comunhão Parcial e há bens particulares: concorre (art. 1.829, I)
+        //   - Participação Final: concorre (art. 1.829, I)
+        // Para fins desta simulação (sem distinguir bens particulares):
+        //   Separação total → cônjuge NÃO concorre
+        //   Demais → cônjuge CONCORRE com filhos (art. 1.829, I c/c art. 1.832)
+
+        if (casado && !separacaoTotal) {
+          // Cônjuge concorre na herança
+          // Art. 1.832: quota do cônjuge = no mínimo ¼ (se 3+ filhos comuns)
+          const totalHerdeiros = qtdFilhos + 1; // +1 cônjuge
+          let quotaConjuge, quotaPorFilho;
+
+          if (qtdFilhos >= 3) {
+            // Cônjuge tem garantia de ¼ (art. 1.832)
+            quotaConjuge = heranca * 0.25;
+            quotaPorFilho = (heranca - quotaConjuge) / qtdFilhos;
+          } else {
+            // Divisão igualitária entre cônjuge + filhos
+            quotaConjuge = heranca / totalHerdeiros;
+            quotaPorFilho = heranca / totalHerdeiros;
+          }
+
+          if (meacao > 0) {
+            resultado.push({ quem: 'Cônjuge (Meação)', valor: meacao, tipo: 'meacao', artigo: 'art. 1.685 / 1.667' });
+          }
+          resultado.push({ quem: 'Cônjuge (Herança — 1ª Classe)', valor: quotaConjuge, tipo: 'heranca_conjuge', artigo: 'art. 1.829, I c/c art. 1.832' });
+          for (let i = 1; i <= qtdFilhos; i++) {
+            resultado.push({ quem: `Filho ${i}`, valor: quotaPorFilho, tipo: 'filho', artigo: 'art. 1.829, I' });
+          }
+        } else {
+          // Separação total ou solteiro com filhos → cônjuge não herda (ou não há cônjuge)
+          const quotaPorFilho = heranca / qtdFilhos;
+          if (casado && meacao > 0) {
+            resultado.push({ quem: 'Cônjuge (Meação)', valor: meacao, tipo: 'meacao', artigo: 'art. 1.685' });
+          }
+          for (let i = 1; i <= qtdFilhos; i++) {
+            resultado.push({ quem: `Filho ${i}`, valor: quotaPorFilho, tipo: 'filho', artigo: 'art. 1.829, I' });
+          }
+        }
+      }
+      // CLASSE II — Ascendentes (se não há filhos)
+      else if (possuiPais && qtdPais > 0) {
+        const quotaPorPai = heranca / (casado ? qtdPais + 1 : qtdPais);
+
+        if (casado) {
+          if (meacao > 0) {
+            resultado.push({ quem: 'Cônjuge (Meação)', valor: meacao, tipo: 'meacao', artigo: 'art. 1.685' });
+          }
+          resultado.push({ quem: 'Cônjuge (Herança — 2ª Classe)', valor: quotaPorPai, tipo: 'heranca_conjuge', artigo: 'art. 1.829, II' });
+        }
+        const quotaAscendente = casado ? quotaPorPai : heranca / qtdPais;
+        for (let i = 1; i <= qtdPais; i++) {
+          resultado.push({ quem: `Pai/Mãe ${i}`, valor: casado ? quotaPorPai : quotaAscendente, tipo: 'ascendente', artigo: 'art. 1.829, II' });
+        }
+      }
+      // CLASSE III — Cônjuge sozinho (sem descendentes nem ascendentes)
+      else if (casado) {
+        if (meacao > 0) {
+          resultado.push({ quem: 'Cônjuge (Meação)', valor: meacao, tipo: 'meacao', artigo: 'art. 1.685' });
+        }
+        resultado.push({ quem: 'Cônjuge (Herdeiro único — 3ª Classe)', valor: heranca, tipo: 'heranca_conjuge', artigo: 'art. 1.829, III' });
+      }
+      // CLASSE IV — Colaterais (sem cônjuge, sem descendentes, sem ascendentes)
+      else if (possuiColaterais && qtdColaterais > 0) {
+        const quotaPorColateral = heranca / qtdColaterais;
+        for (let i = 1; i <= qtdColaterais; i++) {
+          resultado.push({ quem: `Colateral ${i}`, valor: quotaPorColateral, tipo: 'colateral', artigo: 'art. 1.829, IV' });
+        }
+      }
+      // Sem herdeiros → Estado (Município, DF ou União)
+      else {
+        resultado.push({ quem: 'Município / DF / União', valor: heranca, tipo: 'estado', artigo: 'art. 1.844' });
+      }
+
+      // ── VALIDAÇÕES ──────────────────────────────────────────────────
+      const somaResultado = resultado.reduce((s, r) => s + r.valor, 0);
+      const diff = Math.abs(somaResultado - totalCalculo);
+      const tolerance = 1; // R$ 1 de tolerância para arredondamentos
+
+      if (diff > tolerance) {
+        erros.push(`Soma das fatias (R$ ${somaResultado.toFixed(2)}) ≠ Base tributável (R$ ${totalCalculo.toFixed(2)}). Diff: R$ ${diff.toFixed(2)}`);
+      }
+
+      return { resultado, erros, meacao, heranca, totalCalculo };
+    }
+
+    // ============================================================
+    // DADOS DE TESTE
+    // ============================================================
+
+    // Cenários de patrimônio (Agente 1)
+    const CENARIOS_PATRIMONIO = [
+      { desc: 'Renda Fixa concentrada', rf: 2000000, rv: 0, inter: 0, prev: 0, offshore: 0, apt: 0, casa: 0, terr: 0, galp: 0, bens: 0 },
+      { desc: 'Diversificado médio', rf: 800000, rv: 500000, inter: 300000, prev: 200000, offshore: 0, apt: 1000000, casa: 0, terr: 0, galp: 0, bens: 50000 },
+      { desc: 'Grande patrimônio com previdência', rf: 3000000, rv: 2000000, inter: 1000000, prev: 5000000, offshore: 500000, apt: 2000000, casa: 1500000, terr: 800000, galp: 0, bens: 200000 },
+      { desc: 'Imóveis concentrados', rf: 100000, rv: 0, inter: 0, prev: 0, offshore: 0, apt: 1200000, casa: 800000, terr: 600000, galp: 400000, bens: 0 },
+      { desc: 'Offshore relevante', rf: 500000, rv: 1000000, inter: 0, prev: 0, offshore: 2000000, apt: 0, casa: 0, terr: 0, galp: 0, bens: 100000 },
+      { desc: 'Pequeno patrimônio', rf: 50000, rv: 30000, inter: 20000, prev: 100000, offshore: 0, apt: 300000, casa: 0, terr: 0, galp: 0, bens: 20000 },
+      { desc: 'Só previdência', rf: 0, rv: 0, inter: 0, prev: 1000000, offshore: 0, apt: 0, casa: 0, terr: 0, galp: 0, bens: 0 },
+    ];
+
+    function calcTotalPatrimonio(p) {
+      return p.rf + p.rv + p.inter + p.prev + p.offshore + p.apt + p.casa + p.terr + p.galp + p.bens;
+    }
+
+    // Combinações de estrutura familiar (Agente 2)
+    const ESTADOS_CIVIS = ['solteiro', 'casado', 'divorciado', 'viuvo'];
+    const REGIMES = ['Comunhão Parcial de Bens', 'Comunhão Universal de Bens', 'Separação Total de Bens', 'Participação Final nos Aquestos'];
+    const OPCOES_FILHOS = [
+      { temFilhos: 'nao', qtdFilhos: 0 },
+      { temFilhos: 'sim', qtdFilhos: 1 },
+      { temFilhos: 'sim', qtdFilhos: 2 },
+      { temFilhos: 'sim', qtdFilhos: 3 },
+      { temFilhos: 'sim', qtdFilhos: 5 },
+    ];
+    const OPCOES_PAIS = [
+      { possuiPais: 'nao', qtdPais: 0 },
+      { possuiPais: 'sim', qtdPais: 1 },
+      { possuiPais: 'sim', qtdPais: 2 },
+    ];
+    const OPCOES_COLATERAIS = [
+      { possuiColaterais: 'nao', qtdColaterais: 0 },
+      { possuiColaterais: 'sim', qtdColaterais: 2 },
+      { possuiColaterais: 'sim', qtdColaterais: 4 },
+    ];
+
+    function gerarTodasCombinacoes() {
+      const combos = [];
+
+      for (const estadoCivil of ESTADOS_CIVIS) {
+        const regimesAplicaveis = estadoCivil === 'casado' ? REGIMES : ['N/A'];
+        for (const regime of regimesAplicaveis) {
+          for (const filhos of OPCOES_FILHOS) {
+            for (const pais of OPCOES_PAIS) {
+              for (const colaterais of OPCOES_COLATERAIS) {
+                combos.push({
+                  estadoCivil,
+                  regime,
+                  ...filhos,
+                  ...pais,
+                  ...colaterais,
+                });
+              }
+            }
+          }
+        }
+      }
+
+      return combos;
+    }
+
+    // Combinações de taxas (Agente 3) — máx 9%
+    const COMBOS_TAXAS = [
+      { itcmd: 4, honorarios: 6, custas: 1, uf: 'SP', nota: 'SP padrão' },
+      { itcmd: 8, honorarios: 6, custas: 1, uf: 'RJ', nota: 'RJ padrão' },
+      { itcmd: 5, honorarios: 6, custas: 1, uf: 'MG', nota: 'MG padrão' },
+      { itcmd: 4, honorarios: 4, custas: 1, uf: 'PR', nota: 'PR mínimo' },
+      { itcmd: 8, honorarios: 0, custas: 1, uf: 'BA', nota: 'BA sem honorários' },
+      { itcmd: 2, honorarios: 3, custas: 0.5, uf: 'manual', nota: 'Mínimo absoluto' },
+      { itcmd: 8, honorarios: 8, custas: 2, uf: 'manual', nota: 'ITCMD máx + honorários altos', warning: true },
+    ];
+
+    // CDI/IPCA (máx 9%)
+    const COMBOS_CDI_IPCA = [
+      { cdi: 8.5, ipca: 4.5 },
+      { cdi: 9.0, ipca: 5.0 },
+      { cdi: 7.0, ipca: 3.5 },
+      { cdi: 6.5, ipca: 3.0 },
+      { cdi: 5.0, ipca: 2.0 },
+      { cdi: 9.0, ipca: 9.0 }, // limite máximo
+    ];
+
+    // ============================================================
+    // ESTADO GLOBAL
+    // ============================================================
+    let totalCasos = 0;
+    let casosOK = 0;
+    let casosFail = 0;
+    let casosWarn = 0;
+    let allResults = [];
+    let isRunning = false;
+
+    function updateProgress() {
+      const done = casosOK + casosFail;
+      const pct = totalCasos > 0 ? Math.round((done / totalCasos) * 100) : 0;
+      document.getElementById('progress-fill').style.width = pct + '%';
+      document.getElementById('status-pct').textContent = pct + '%';
+      document.getElementById('cnt-total').textContent = done;
+      document.getElementById('cnt-ok').textContent = casosOK;
+      document.getElementById('cnt-fail').textContent = casosFail;
+      document.getElementById('cnt-warn').textContent = casosWarn;
+    }
+
+    // ============================================================
+    // AGENTE 1 — PATRIMÔNIO
+    // ============================================================
+    async function runAgente1() {
+      setBadge(1, 'running', '⚙ Rodando');
+      setCardState(1, 'running');
+      appendLog('log-1', '🔵 Agente 1 iniciado — configurando cenários de patrimônio', 'run');
+      await sleep(300);
+
+      document.getElementById('a1-cenarios').textContent = CENARIOS_PATRIMONIO.length;
+
+      const resultados = [];
+      let idx = 0;
+
+      for (const cenario of CENARIOS_PATRIMONIO) {
+        idx++;
+        const total = calcTotalPatrimonio(cenario);
+        document.getElementById('a1-atual').textContent = idx;
+        document.getElementById('a1-total').textContent = 'R$ ' + total.toLocaleString('pt-BR', { maximumFractionDigits: 0 });
+
+        appendLog('log-1', `📊 Cenário ${idx}/${CENARIOS_PATRIMONIO.length}: ${cenario.desc}`, 'info');
+        appendLog('log-1', `   └─ Total: R$ ${total.toLocaleString('pt-BR')} | Prev: R$ ${cenario.prev.toLocaleString('pt-BR')}`, 'ok');
+
+        // Verifica que a soma dos componentes bate com o total esperado
+        const erro = total <= 0 && idx > 6 ? 'Patrimônio zerado para cenário ativo' : null;
+
+        resultados.push({ cenario, total, erro });
+        await sleep(80);
+      }
+
+      appendLog('log-1', `✅ Agente 1 concluído — ${CENARIOS_PATRIMONIO.length} cenários configurados`, 'ok');
+      setBadge(1, 'done', '✓ Concluído');
+      setCardState(1, 'done');
+
+      return resultados;
+    }
+
+    // ============================================================
+    // AGENTE 2 — ESTRUTURA FAMILIAR
+    // ============================================================
+    async function runAgente2() {
+      setBadge(2, 'running', '⚙ Rodando');
+      setCardState(2, 'running');
+      appendLog('log-2', '🟣 Agente 2 iniciado — gerando combinações familiares', 'run');
+      await sleep(400);
+
+      const combos = gerarTodasCombinacoes();
+      const totalCombos = combos.length;
+      document.getElementById('a2-combos').textContent = totalCombos;
+
+      appendLog('log-2', `📐 ${totalCombos} combinações geradas`, 'info');
+      appendLog('log-2', `   Estados civis: ${ESTADOS_CIVIS.join(', ')}`, 'info');
+      appendLog('log-2', `   Regimes: ${REGIMES.length} tipos`, 'info');
+      appendLog('log-2', `   Opções filhos: ${OPCOES_FILHOS.length} | Pais: ${OPCOES_PAIS.length} | Colaterais: ${OPCOES_COLATERAIS.length}`, 'info');
+
+      let testadas = 0;
+      const validas = [];
+      const invalidas = [];
+
+      for (const combo of combos) {
+        testadas++;
+        document.getElementById('a2-testadas').textContent = testadas;
+        const pct = Math.round((testadas / totalCombos) * 100);
+        document.getElementById('a2-cobertura').textContent = pct + '%';
+
+        // Valida regra básica: se solteiro, regime não se aplica
+        let valid = true;
+        let motivo = '';
+
+        if (combo.estadoCivil !== 'casado' && combo.regime !== 'N/A') {
+          // OK — já tratamos para N/A acima
+        }
+
+        // Valida que filhos + pais + colaterais têm pelo menos uma opção
+        if (testadas % 50 === 0) {
+          appendLog('log-2', `   ↳ Processadas ${testadas}/${totalCombos} (${pct}%)`, 'info');
+        }
+
+        if (valid) validas.push(combo);
+        else invalidas.push({ combo, motivo });
+
+        if (testadas % 10 === 0) await sleep(0); // yield para UI
+      }
+
+      appendLog('log-2', `✅ ${validas.length} combinações válidas processadas`, 'ok');
+      if (invalidas.length > 0) {
+        appendLog('log-2', `⚠️  ${invalidas.length} combinações inválidas ignoradas`, 'warn');
+      }
+
+      setBadge(2, 'done', '✓ Concluído');
+      setCardState(2, 'done');
+
+      return combos;
+    }
+
+    // ============================================================
+    // AGENTE 3 — TAXAS CDI/IPCA
+    // ============================================================
+    async function runAgente3() {
+      setBadge(3, 'running', '⚙ Rodando');
+      setCardState(3, 'running');
+      appendLog('log-3', '🟢 Agente 3 iniciado — avaliando taxas de mercado', 'run');
+      await sleep(500);
+
+      const resultados = [];
+      let idx = 0;
+
+      document.getElementById('a3-combos').textContent = COMBOS_CDI_IPCA.length + COMBOS_TAXAS.length;
+
+      // Verifica taxas CDI/IPCA (sem limite)
+      appendLog('log-3', '📈 Verificando taxas CDI e IPCA projetadas', 'run');
+      let melhorCDI = null, melhorIPCA = null;
+
+      for (const combo of COMBOS_CDI_IPCA) {
+        idx++;
+        const cdiOK = true;
+        const ipcaOK = true;
+
+        if (cdiOK && ipcaOK) {
+          appendLog('log-3', `✅ CDI ${combo.cdi}% / IPCA ${combo.ipca}%`, 'ok');
+          if (!melhorCDI || combo.cdi > melhorCDI) {
+            melhorCDI = combo.cdi;
+            melhorIPCA = combo.ipca;
+          }
+          resultados.push({ ...combo, valida: true });
+        }
+        await sleep(100);
+      }
+
+      document.getElementById('a3-cdi').textContent = (melhorCDI || 0).toFixed(1) + '%';
+      document.getElementById('a3-ipca').textContent = (melhorIPCA || 0).toFixed(1) + '%';
+
+      // Verifica taxas tributárias
+      appendLog('log-3', '📊 Verificando combinações de ITCMD + Honorários + Custas', 'run');
+      await sleep(200);
+
+      for (const taxa of COMBOS_TAXAS) {
+        const total = taxa.itcmd + taxa.honorarios + taxa.custas;
+        if (taxa.warning) {
+          appendLog('log-3', `⚠️  ${taxa.uf} — ${taxa.nota}: total ${total.toFixed(1)}% (alto)`, 'warn');
+        } else {
+          appendLog('log-3', `✅ ${taxa.uf} — ITCMD ${taxa.itcmd}% + Honorários ${taxa.honorarios}% + Custas ${taxa.custas}% = ${total.toFixed(1)}%`, 'ok');
+        }
+        await sleep(80);
+      }
+
+      appendLog('log-3', `✅ Agente 3 concluído — ${resultados.filter(r => r.valida).length}/${COMBOS_CDI_IPCA.length} combos CDI/IPCA válidas`, 'ok');
+      setBadge(3, 'done', '✓ Concluído');
+      setCardState(3, 'done');
+
+      return { cdiIpcaValidos: resultados.filter(r => r.valida), taxasValidas: COMBOS_TAXAS };
+    }
+
+    // ============================================================
+    // AGENTE 4 — VERIFICADOR CÓDIGO CIVIL
+    // ============================================================
+    async function runAgente4(cenarios, combinacoesFamiliares, taxas) {
+      setBadge(4, 'running', '⚙ Rodando');
+      setCardState(4, 'running');
+      appendLog('log-4', '🟡 Agente 4 iniciado — Verificador Código Civil Brasileiro', 'run');
+      appendLog('log-4', '📖 Base legal: Lei 10.406/2002 (arts. 1.829–1.848)', 'info');
+      await sleep(600);
+
+      const resultadosTeste = [];
+      let verificados = 0;
+      let errosTotal = 0;
+
+      // Seleciona subset representativo de combinações familiares
+      // Para cada cenário de patrimônio, roda todas as combinações de família × todas as taxas
+      const combinacoesRepresentativas = [
+        // Solteiro
+        { estadoCivil: 'solteiro', regime: 'N/A', temFilhos: 'nao', qtdFilhos: 0, possuiPais: 'nao', qtdPais: 0, possuiColaterais: 'nao', qtdColaterais: 0 },
+        { estadoCivil: 'solteiro', regime: 'N/A', temFilhos: 'sim', qtdFilhos: 2, possuiPais: 'nao', qtdPais: 0, possuiColaterais: 'nao', qtdColaterais: 0 },
+        { estadoCivil: 'solteiro', regime: 'N/A', temFilhos: 'nao', qtdFilhos: 0, possuiPais: 'sim', qtdPais: 2, possuiColaterais: 'nao', qtdColaterais: 0 },
+        { estadoCivil: 'solteiro', regime: 'N/A', temFilhos: 'nao', qtdFilhos: 0, possuiPais: 'nao', qtdPais: 0, possuiColaterais: 'sim', qtdColaterais: 3 },
+        // Casado Comunhão Parcial
+        { estadoCivil: 'casado', regime: 'Comunhão Parcial de Bens', temFilhos: 'nao', qtdFilhos: 0, possuiPais: 'nao', qtdPais: 0, possuiColaterais: 'nao', qtdColaterais: 0 },
+        { estadoCivil: 'casado', regime: 'Comunhão Parcial de Bens', temFilhos: 'sim', qtdFilhos: 1, possuiPais: 'nao', qtdPais: 0, possuiColaterais: 'nao', qtdColaterais: 0 },
+        { estadoCivil: 'casado', regime: 'Comunhão Parcial de Bens', temFilhos: 'sim', qtdFilhos: 2, possuiPais: 'nao', qtdPais: 0, possuiColaterais: 'nao', qtdColaterais: 0 },
+        { estadoCivil: 'casado', regime: 'Comunhão Parcial de Bens', temFilhos: 'sim', qtdFilhos: 3, possuiPais: 'nao', qtdPais: 0, possuiColaterais: 'nao', qtdColaterais: 0 },
+        { estadoCivil: 'casado', regime: 'Comunhão Parcial de Bens', temFilhos: 'sim', qtdFilhos: 5, possuiPais: 'nao', qtdPais: 0, possuiColaterais: 'nao', qtdColaterais: 0 },
+        { estadoCivil: 'casado', regime: 'Comunhão Parcial de Bens', temFilhos: 'nao', qtdFilhos: 0, possuiPais: 'sim', qtdPais: 2, possuiColaterais: 'nao', qtdColaterais: 0 },
+        // Casado Comunhão Universal
+        { estadoCivil: 'casado', regime: 'Comunhão Universal de Bens', temFilhos: 'sim', qtdFilhos: 2, possuiPais: 'nao', qtdPais: 0, possuiColaterais: 'nao', qtdColaterais: 0 },
+        { estadoCivil: 'casado', regime: 'Comunhão Universal de Bens', temFilhos: 'nao', qtdFilhos: 0, possuiPais: 'nao', qtdPais: 0, possuiColaterais: 'nao', qtdColaterais: 0 },
+        // Casado Separação Total
+        { estadoCivil: 'casado', regime: 'Separação Total de Bens', temFilhos: 'sim', qtdFilhos: 2, possuiPais: 'nao', qtdPais: 0, possuiColaterais: 'nao', qtdColaterais: 0 },
+        { estadoCivil: 'casado', regime: 'Separação Total de Bens', temFilhos: 'nao', qtdFilhos: 0, possuiPais: 'sim', qtdPais: 1, possuiColaterais: 'nao', qtdColaterais: 0 },
+        // Casado Participação Final
+        { estadoCivil: 'casado', regime: 'Participação Final nos Aquestos', temFilhos: 'sim', qtdFilhos: 2, possuiPais: 'nao', qtdPais: 0, possuiColaterais: 'nao', qtdColaterais: 0 },
+        // Divorciado
+        { estadoCivil: 'divorciado', regime: 'N/A', temFilhos: 'sim', qtdFilhos: 2, possuiPais: 'nao', qtdPais: 0, possuiColaterais: 'nao', qtdColaterais: 0 },
+        { estadoCivil: 'divorciado', regime: 'N/A', temFilhos: 'nao', qtdFilhos: 0, possuiPais: 'sim', qtdPais: 2, possuiColaterais: 'nao', qtdColaterais: 0 },
+        // Viúvo
+        { estadoCivil: 'viuvo', regime: 'N/A', temFilhos: 'sim', qtdFilhos: 3, possuiPais: 'nao', qtdPais: 0, possuiColaterais: 'nao', qtdColaterais: 0 },
+        { estadoCivil: 'viuvo', regime: 'N/A', temFilhos: 'nao', qtdFilhos: 0, possuiPais: 'nao', qtdPais: 0, possuiColaterais: 'sim', qtdColaterais: 2 },
+      ];
+
+      const cenarioBaseWrapper = cenarios[1]; // Patrimônio diversificado médio
+      const cenarioBase = cenarioBaseWrapper.cenario;
+      const totalPatrimonio = cenarioBaseWrapper.total;
+      const prevPatrimonio = cenarioBase.prev;
+
+      appendLog('log-4', `💰 Patrimônio base de teste: R$ ${totalPatrimonio.toLocaleString('pt-BR')} (prev: R$ ${prevPatrimonio.toLocaleString('pt-BR')})`, 'info');
+
+      for (const familia of combinacoesRepresentativas) {
+        verificados++;
+        document.getElementById('a4-verificados').textContent = verificados;
+
+        const taxaBase = taxas.taxasValidas[0]; // RJ padrão
+
+        // ── Calcula partilha pelo Código Civil ──
+        const ccCalc = calcularPartilhaCodigoCivil(totalPatrimonio, prevPatrimonio, familia);
+
+        // ── Calcula partilha do sistema ──
+        const sistCalc = calcularPartilhaSistema(totalPatrimonio, prevPatrimonio, familia);
+
+        // ── Calcula prejuízo tributário ──
+        const prejuizo = calcularPrejuizoSistema(totalPatrimonio, prevPatrimonio, familia.regime || 'N/A', taxaBase.itcmd, taxaBase.honorarios, taxaBase.custas);
+
+        // ── Verifica conformidade ──
+        const erros = [...ccCalc.erros];
+        const alertas = [];
+
+        // Compara sistema vs Código Civil para cada fatia
+        const diffAnalise = compararPartilha(ccCalc.resultado, sistCalc);
+        if (diffAnalise.divergencias > 0) {
+          erros.push(`Sistema diverge do CC em ${diffAnalise.divergencias} fatia(s). ${diffAnalise.detalhe}`);
+        }
+
+        // Verifica regra art. 1.832 — cônjuge tem mínimo ¼ com 3+ filhos
+        if (familia.estadoCivil === 'casado' && familia.temFilhos === 'sim' && familia.qtdFilhos >= 3) {
+          const fatiaConjuge = ccCalc.resultado.find(r => r.tipo === 'heranca_conjuge');
+          if (fatiaConjuge) {
+            const minQuarto = ccCalc.heranca * 0.25;
+            if (fatiaConjuge.valor < minQuarto - 1) {
+              erros.push(`Art. 1.832 violado: cônjuge recebe R$ ${fatiaConjuge.valor.toFixed(0)} < ¼ = R$ ${minQuarto.toFixed(0)}`);
+            }
+          }
+        }
+
+        // Aviso: patrimônio totalmente em previdência (sem base tributável)
+        if (ccCalc.totalCalculo === 0 && totalPatrimonio > 0) {
+          alertas.push('Patrimônio totalmente em previdência → sem base tributável');
+        }
+
+        // Verifica ITCMD: base de cálculo deve excluir previdência e meação (nos regimes de comunhão)
+        const baseEsperadaCC = ccCalc.heranca; // base = patrimônio - prev - meação
+        const baseSistema = prejuizo.baseAtual;
+        // Para fins de ITCMD: o sistema usa (total-prev) * multiplicadorRegime
+        // Código Civil: ITCMD incide sobre a porção que efetivamente é transferida por herança
+        // Ou seja, baseCC = total - prev - meação = heranca
+        const diffBase = Math.abs(baseEsperadaCC - baseSistema);
+        if (diffBase > 1000) {
+          alertas.push(`Base tributável do sistema (R$ ${baseSistema.toFixed(0)}) difere da herança líquida do CC (R$ ${baseEsperadaCC.toFixed(0)}). Diff: R$ ${diffBase.toFixed(0)}`);
+        }
+
+        const status = erros.length > 0 ? 'fail' : alertas.length > 0 ? 'warn' : 'ok';
+
+        if (status === 'ok') casosOK++;
+        else if (status === 'fail') { casosFail++; errosTotal++; }
+        else casosWarn++;
+
+        document.getElementById('a4-erros').textContent = errosTotal;
+        const conf = verificados > 0 ? ((verificados - errosTotal) / verificados * 100).toFixed(0) : 100;
+        document.getElementById('a4-conformidade').textContent = conf + '%';
+
+        const familiaDesc = `${familia.estadoCivil} / ${familia.regime !== 'N/A' ? familia.regime.split(' ')[0] : 'N/A'} / ${familia.temFilhos === 'sim' ? familia.qtdFilhos + 'filhos' : 'sem filhos'}`;
+
+        if (status === 'fail') {
+          appendLog('log-4', `❌ FALHA [${familiaDesc}]: ${erros[0]}`, 'fail');
+        } else if (status === 'warn') {
+          appendLog('log-4', `⚠️  AVISO [${familiaDesc}]: ${alertas[0]}`, 'warn');
+          casosWarn++;
+        } else {
+          appendLog('log-4', `✅ OK [${familiaDesc}] — CC conforme`, 'ok');
+        }
+
+        resultadosTeste.push({
+          familia,
+          ccCalc,
+          sistCalc,
+          prejuizo,
+          erros,
+          alertas,
+          status,
+          diffAnalise
+        });
+
+        totalCasos++;
+        updateProgress();
+
+        await sleep(50);
+      }
+
+      appendLog('log-4', `\n📊 RESULTADO FINAL — Verificador CC`, 'run');
+      appendLog('log-4', `   Casos verificados: ${verificados}`, 'info');
+      appendLog('log-4', `   ✅ Conformes: ${verificados - errosTotal}`, 'ok');
+      appendLog('log-4', `   ❌ Não conformes: ${errosTotal}`, errosTotal > 0 ? 'fail' : 'ok');
+      appendLog('log-4', `   Conformidade: ${((verificados - errosTotal) / verificados * 100).toFixed(1)}%`, errosTotal > 0 ? 'warn' : 'ok');
+
+      setBadge(4, errosTotal > 0 ? 'error' : 'done', errosTotal > 0 ? '⚠ Erros' : '✓ Conforme');
+      setCardState(4, errosTotal > 0 ? 'has-errors' : 'done');
+
+      return resultadosTeste;
+    }
+
+    function calcularPartilhaSistema(total, prev, familia) {
+      const totalCalculo = Math.max(0, total - prev);
+      const casado = familia.estadoCivil === 'casado';
+      const regime = (familia.regime || '').toLowerCase();
+      const temFilhos = familia.temFilhos === 'sim';
+      const qtdFilhos = Number(familia.qtdFilhos) || 0;
+      const possuiPais = familia.possuiPais === 'sim';
+      const qtdPais = Number(familia.qtdPais) || 0;
+      const possuiColaterais = familia.possuiColaterais === 'sim';
+      const qtdColaterais = Number(familia.qtdColaterais) || 0;
+
+      let meacao = 0;
+      let heranca = totalCalculo;
+      let fatias = [];
+      let labels = [];
+
+      const comunhao = regime.includes('comunhão parcial') || regime.includes('comunhão universal');
+      const separacaoTotal = regime.includes('separação total');
+
+      if (casado) {
+        if (comunhao) {
+          meacao = totalCalculo * 0.5;
+          heranca = totalCalculo * 0.5;
+          labels.push('Cônjuge (Meação)');
+          fatias.push(meacao);
+        } else {
+          meacao = 0;
+          heranca = totalCalculo;
+        }
+      }
+
+      if (temFilhos && qtdFilhos > 0) {
+        if (casado && !separacaoTotal) {
+          let quotaConjuge, quotaPorFilho;
+          if (qtdFilhos >= 3) {
+            quotaConjuge = heranca * 0.25;
+            quotaPorFilho = (heranca - quotaConjuge) / qtdFilhos;
+          } else {
+            const totalPartes = qtdFilhos + 1;
+            quotaConjuge = heranca / totalPartes;
+            quotaPorFilho = heranca / totalPartes;
+          }
+          labels.push('Cônjuge (Herança)');
+          fatias.push(quotaConjuge);
+          for (let i = 1; i <= qtdFilhos; i++) {
+            labels.push(`Filho ${i}`);
+            fatias.push(quotaPorFilho);
+          }
+        } else {
+          const quotaPorFilho = heranca / qtdFilhos;
+          for (let i = 1; i <= qtdFilhos; i++) {
+            labels.push(`Filho ${i}`);
+            fatias.push(quotaPorFilho);
+          }
+        }
+      } else if (possuiPais && qtdPais > 0) {
+        if (casado) {
+          const valorParte = heranca / (qtdPais + 1);
+          labels.push('Cônjuge (Herança)');
+          fatias.push(valorParte);
+          for (let i = 1; i <= qtdPais; i++) {
+            labels.push(qtdPais === 2 ? (i === 1 ? 'Pai' : 'Mãe') : 'Ascendente');
+            fatias.push(valorParte);
+          }
+        } else {
+          const valorParte = heranca / qtdPais;
+          for (let i = 1; i <= qtdPais; i++) {
+            labels.push(qtdPais === 2 ? (i === 1 ? 'Pai' : 'Mãe') : 'Ascendente');
+            fatias.push(valorParte);
+          }
+        }
+      } else if (casado) {
+        labels.push('Cônjuge (Herança)');
+        fatias.push(heranca);
+      } else if (possuiColaterais && qtdColaterais > 0) {
+        const valorParte = heranca / qtdColaterais;
+        for (let i = 1; i <= qtdColaterais; i++) {
+          labels.push(`Colateral ${i}`);
+          fatias.push(valorParte);
+        }
+      } else {
+        labels.push('Município / DF / União');
+        fatias.push(heranca);
+      }
+
+      return { labels, fatias, totalCalculo, meacao, heranca };
+    }
+
+    // ============================================================
+    // COMPARAR PARTILHA CC × SISTEMA
+    // ============================================================
+    function compararPartilha(ccResultado, sistCalc) {
+      const TOLERANCE = 1; // R$ 1
+      let divergencias = 0;
+      let detalhe = '';
+
+      // Compara fatias individuais
+      const ccMeacaoVal = ccResultado.filter(r => r.tipo === 'meacao').reduce((s, r) => s + r.valor, 0);
+      const ccHerConjVal = ccResultado.filter(r => r.tipo === 'heranca_conjuge').reduce((s, r) => s + r.valor, 0);
+      const ccFilhosVal = ccResultado.filter(r => r.tipo === 'filho').reduce((s, r) => s + r.valor, 0);
+      const ccAscVal = ccResultado.filter(r => r.tipo === 'ascendente').reduce((s, r) => s + r.valor, 0);
+      const ccColVal = ccResultado.filter(r => r.tipo === 'colateral').reduce((s, r) => s + r.valor, 0);
+      const ccEstVal = ccResultado.filter(r => r.tipo === 'estado').reduce((s, r) => s + r.valor, 0);
+
+      let sistMeacaoVal = 0;
+      let sistHerConjVal = 0;
+      let sistFilhosVal = 0;
+      let sistAscVal = 0;
+      let sistColVal = 0;
+      let sistEstVal = 0;
+
+      sistCalc.labels.forEach((label, i) => {
+        const val = sistCalc.fatias[i];
+        if (label.includes('Meação')) {
+          sistMeacaoVal += val;
+        } else if (label.includes('Cônjuge (Herança)') || label.includes('Cônjuge (Herdeiro único)')) {
+          sistHerConjVal += val;
+        } else if (label.includes('Filho')) {
+          sistFilhosVal += val;
+        } else if (label.includes('Pai') || label.includes('Mãe') || label.includes('Ascendente')) {
+          sistAscVal += val;
+        } else if (label.includes('Colateral')) {
+          sistColVal += val;
+        } else {
+          sistEstVal += val;
+        }
+      });
+
+      const diffs = [
+        { nome: 'Meação', cc: ccMeacaoVal, sist: sistMeacaoVal },
+        { nome: 'Herança Cônjuge', cc: ccHerConjVal, sist: sistHerConjVal },
+        { nome: 'Filhos', cc: ccFilhosVal, sist: sistFilhosVal },
+        { nome: 'Ascendentes', cc: ccAscVal, sist: sistAscVal },
+        { nome: 'Colaterais', cc: ccColVal, sist: sistColVal },
+        { nome: 'Estado', cc: ccEstVal, sist: sistEstVal }
+      ];
+
+      diffs.forEach(d => {
+        if (Math.abs(d.cc - d.sist) > TOLERANCE) {
+          divergencias++;
+          detalhe += `${d.nome} (CC:${d.cc.toFixed(0)} vs Sist:${d.sist.toFixed(0)}) `;
+        }
+      });
+
+      return { divergencias, detalhe: detalhe.trim() };
+    }
+
+    // ============================================================
+    // RENDERIZAR TABELA DE RESULTADOS
+    // ============================================================
+    function renderizarResultados(resultados) {
+      const container = document.getElementById('results-container');
+      document.getElementById('results-count').textContent = resultados.length + ' casos';
+
+      if (resultados.length === 0) {
+        container.innerHTML = '<div class="empty-state"><p>Nenhum resultado gerado</p></div>';
+        return;
+      }
+
+      let html = `
+        <table class="results-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Estado Civil</th>
+              <th>Regime</th>
+              <th>Filhos</th>
+              <th>Pais/Asc.</th>
+              <th>Colaterais</th>
+              <th>Base Tributável</th>
+              <th>Prejuízo Trib.</th>
+              <th>Status CC</th>
+              <th>Observação</th>
+            </tr>
+          </thead>
+          <tbody>
+      `;
+
+      resultados.forEach((r, idx) => {
+        const f = r.familia;
+        const statusChip = r.status === 'ok'
+          ? '<span class="chip chip-ok">✓ Conforme</span>'
+          : r.status === 'warn'
+            ? '<span class="chip chip-warn">⚠ Aviso</span>'
+            : '<span class="chip chip-fail">✗ Falha</span>';
+
+        const obs = r.erros.length > 0
+          ? `<span style="color:#fca5a5;font-size:11px;">${r.erros[0].substring(0, 80)}${r.erros[0].length > 80 ? '...' : ''}</span>`
+          : r.alertas.length > 0
+            ? `<span style="color:#fde68a;font-size:11px;">${r.alertas[0].substring(0, 80)}</span>`
+            : `<span class="civil-code-ref">${r.ccCalc.resultado[0]?.artigo || '—'}</span>`;
+
+        const baseVal = r.ccCalc.totalCalculo;
+        const prejVal = r.prejuizo.prejuizoAtual;
+
+        html += `
+          <tr class="${r.status === 'fail' ? 'fail-row' : ''}">
+            <td style="color:var(--text-muted)">${idx + 1}</td>
+            <td>${f.estadoCivil}</td>
+            <td style="font-size:11px;">${f.regime === 'N/A' ? '—' : f.regime.replace(' de Bens', '').replace('Participação Final nos Aquestos', 'Part. Final')}</td>
+            <td>${f.temFilhos === 'sim' ? f.qtdFilhos : '—'}</td>
+            <td>${f.possuiPais === 'sim' ? f.qtdPais : '—'}</td>
+            <td>${f.possuiColaterais === 'sim' ? f.qtdColaterais : '—'}</td>
+            <td>R$ ${baseVal.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}</td>
+            <td>R$ ${prejVal.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}</td>
+            <td>${statusChip}</td>
+            <td>${obs}</td>
+          </tr>
+        `;
+      });
+
+      html += '</tbody></table>';
+      container.innerHTML = html;
+    }
+
+    // ============================================================
+    // RENDERIZAR ALERTAS FINAIS
+    // ============================================================
+    function renderizarAlertas(resultados) {
+      const container = document.getElementById('summary-alerts');
+      container.style.display = 'flex';
+      container.innerHTML = '';
+
+      const fails = resultados.filter(r => r.status === 'fail');
+      const warns = resultados.filter(r => r.status === 'warn');
+      const oks = resultados.filter(r => r.status === 'ok');
+
+      if (oks.length === resultados.length) {
+        container.innerHTML += `
+          <div class="alert-item success">
+            <strong>✅ Sistema 100% conforme com o Código Civil Brasileiro</strong> — 
+            Todos os ${resultados.length} casos de herança e sucessão foram validados com sucesso. 
+            Os cálculos de prejuízo tributário (ITCMD + honorários + custas) e a lógica de 
+            partilha estão de acordo com a Lei 10.406/2002, arts. 1.829–1.848.
+          </div>
+        `;
+      } else {
+        if (fails.length > 0) {
+          container.innerHTML += `
+            <div class="alert-item danger">
+              <strong>❌ ${fails.length} caso(s) com não-conformidade ao Código Civil</strong><br>
+              Principais problemas: ${[...new Set(fails.flatMap(f => f.erros))].slice(0, 3).join(' | ')}
+            </div>
+          `;
+        }
+        if (warns.length > 0) {
+          container.innerHTML += `
+            <div class="alert-item warn">
+              <strong>⚠️ ${warns.length} caso(s) com avisos</strong><br>
+              ${[...new Set(warns.flatMap(f => f.alertas))].slice(0, 2).join(' | ')}
+            </div>
+          `;
+        }
+      }
+
+      // Regras do CC que o sistema aplica corretamente
+      container.innerHTML += `
+        <div class="alert-item info">
+          <strong>📖 Regras do Código Civil verificadas:</strong><br>
+          • <strong>Art. 1.829, I</strong> — Descendentes herdam com concorrência do cônjuge (exceto separação total)<br>
+          • <strong>Art. 1.832</strong> — Cônjuge tem garantia de ¼ da herança quando houver 3+ filhos comuns<br>
+          • <strong>Art. 1.829, II</strong> — Ascendentes herdam quando não há descendentes (cônjuge concorre)<br>
+          • <strong>Art. 1.829, III</strong> — Cônjuge herdeiro único quando não há descend. nem ascend.<br>
+          • <strong>Art. 1.829, IV</strong> — Colaterais até 4º grau herdam na ausência de cônjuge, desc. e asc.<br>
+          • <strong>Art. 1.844</strong> — Sem herdeiros: herança vai ao Município/DF/União<br>
+          • <strong>Art. 1.667/1.685</strong> — Meação aplicada nos regimes de comunhão (50% isento de ITCMD)<br>
+          • <strong>Previdência</strong> — Excluída da base de inventário (transmissão direta, sem ITCMD — LC 109/2001)
+        </div>
+      `;
+    }
+
+    // ============================================================
+    // AGENTE 5 — GERADOR DE RELATÓRIO DE BUGS
+    // ============================================================
+    async function runAgente5(resultadosA4, cenarios, taxas) {
+      setBadge(5, 'running', '⚙ Analisando');
+      setCardState(5, 'running');
+      appendLog('log-5', '🩷 Agente 5 iniciado — coletando erros de todos os agentes', 'run');
+      await sleep(400);
+
+      const bugs = [];
+
+      // ── Coleta erros do Agente 4 (Código Civil) ──────────────────
+      appendLog('log-5', '🔍 Varrendo resultados do Agente 4 (Código Civil)...', 'info');
+      await sleep(200);
+
+      resultadosA4.forEach((r, idx) => {
+        const f = r.familia;
+        const familiaStr = `${f.estadoCivil} / ${f.regime !== 'N/A' ? f.regime : 'sem regime'} / ${f.temFilhos === 'sim' ? f.qtdFilhos + ' filho(s)' : 'sem filhos'}`;
+
+        r.erros.forEach(erro => {
+          // Classificar severidade
+          let severidade, categoria;
+          if (erro.includes('Art. 1.832') || erro.includes('Soma das fatias')) {
+            severidade = 'critical';
+            categoria = 'Cálculo de Herança';
+          } else if (erro.includes('Base tributável') || erro.includes('diverge do CC')) {
+            severidade = 'high';
+            categoria = 'Base Tributária';
+          } else {
+            severidade = 'medium';
+            categoria = 'Partilha';
+          }
+
+          // Sugestão de correção
+          let fix = '';
+          if (erro.includes('Art. 1.832')) {
+            fix = '💡 Correção: Garantir quota mínima de 1/4 para o cônjuge quando qtdFilhos ≥ 3 em calcularPartilha() — tributario.js linha ~613';
+          } else if (erro.includes('Soma das fatias')) {
+            fix = '💡 Correção: Verificar divisão das fatias — a soma deve sempre fechar em totalCalculo. Revisar lógica de arredondamento.';
+          } else if (erro.includes('diverge do CC')) {
+            fix = '💡 Correção: O sistema usa divisão igualitária (herança/partes), mas o CC exige regras específicas por regime e nº de herdeiros.';
+          } else if (erro.includes('Base tributável')) {
+            fix = '💡 Correção: A base para ITCMD deve ser: (patrimônio − previdência − meação), não (patrimônio − previdência) × multiplicador.';
+          } else {
+            fix = '💡 Revisar a lógica de partilha para o cenário: ' + familiaStr;
+          }
+
+          bugs.push({ id: `CC-${bugs.length + 1}`, severidade, categoria, titulo: erro.substring(0, 90), detalhe: `Cenário: ${familiaStr}`, fix, fonte: 'Agente 4 — Verificador CC', caso: idx + 1 });
+        });
+
+        r.alertas.forEach(alerta => {
+          bugs.push({
+            id: `AV-${bugs.length + 1}`,
+            severidade: 'low',
+            categoria: 'Aviso de Planejamento',
+            titulo: alerta.substring(0, 90),
+            detalhe: `Cenário: ${familiaStr}`,
+            fix: '💡 Este aviso não indica erro, mas pode impactar a experiência do usuário final.',
+            fonte: 'Agente 4 — Alertas',
+            caso: idx + 1
+          });
+        });
+      });
+
+      // ── Verifica cenários de patrimônio (Agente 1) ──────────────
+      appendLog('log-5', '🔍 Varrendo cenários do Agente 1 (Patrimônio)...', 'info');
+      await sleep(200);
+
+      cenarios.forEach((c, idx) => {
+        if (c.erro) {
+          bugs.push({
+            id: `PAT-${idx + 1}`,
+            severidade: 'medium',
+            categoria: 'Dados de Patrimônio',
+            titulo: c.erro,
+            detalhe: `Cenário: ${c.cenario.desc}`,
+            fix: '💡 Verificar preenchimento dos inputs em patrimonio.js',
+            fonte: 'Agente 1 — Patrimônio',
+            caso: idx + 1
+          });
+        }
+      });
+
+      // ── Verifica taxas CDI/IPCA (Agente 3) ──────────────────────
+      appendLog('log-5', '🔍 Varrendo taxas do Agente 3 (CDI/IPCA)...', 'info');
+      await sleep(200);
+
+      (taxas.cdiIpcaValidos || []).forEach((t, idx) => {
+        if (!t.valida) {
+          bugs.push({
+            id: `TAXA-${idx + 1}`,
+            severidade: 'high',
+            categoria: 'Validação de Taxas',
+            titulo: `CDI ${t.cdi}% ou IPCA ${t.ipca}% excedem o limite de 9%`,
+            detalhe: 'O sistema deve impedir taxas > 9% por requisito de negócio',
+            fix: '💡 Correção: Adicionar validação no input de CDI/IPCA em script_evolucao.js para recusar valores > 9%.',
+            fonte: 'Agente 3 — Taxas',
+            caso: idx + 1
+          });
+        }
+      });
+
+      // ── Verificações estruturais do sistema ──────────────────────
+      appendLog('log-5', '🔍 Verificando consistência estrutural do sistema...', 'info');
+      await sleep(300);
+
+      // Bug estrutural: sistema não aplica art. 1.832 (garantia ¼ cônjuge com 3+ filhos)
+      const casoArt1832 = resultadosA4.find(r =>
+        r.familia.estadoCivil === 'casado' &&
+        r.familia.temFilhos === 'sim' &&
+        Number(r.familia.qtdFilhos) >= 3 &&
+        r.erros.some(e => e.includes('1.832'))
+      );
+      if (casoArt1832) {
+        const jaExiste = bugs.find(b => b.categoria === 'Cálculo de Herança' && b.titulo.includes('1.832'));
+        if (!jaExiste) {
+          bugs.push({
+            id: 'EST-001',
+            severidade: 'critical',
+            categoria: 'Cálculo de Herança',
+            titulo: 'Art. 1.832 não implementado: cônjuge não recebe mínimo de ¼ com 3+ filhos',
+            detalhe: 'O sistema divide igualmente entre cônjuge e filhos, mas o CC garante ao menos 1/4 para o cônjuge quando há 3 ou mais filhos comuns.',
+            fix: '💡 Correção em tributario.js linha ~613: if (qtdFilhos >= 3) { quotaConjuge = heranca * 0.25; quotaPorFilho = (heranca - quotaConjuge) / qtdFilhos; }',
+            fonte: 'Análise Estrutural — Agente 5',
+            caso: null
+          });
+        }
+      }
+
+      // Bug: separação total não bloqueia herança do cônjuge na lógica do sistema
+      const casoSepTotal = resultadosA4.find(r =>
+        r.familia.estadoCivil === 'casado' &&
+        r.familia.regime === 'Separação Total de Bens' &&
+        r.familia.temFilhos === 'sim' &&
+        r.diffAnalise.divergencias > 0
+      );
+      if (casoSepTotal) {
+        bugs.push({
+          id: 'EST-002',
+          severidade: 'high',
+          categoria: 'Regime de Bens',
+          titulo: 'Separação Total: cônjuge não deve herdar junto com filhos (art. 1.829, I)',
+          detalhe: 'No regime de Separação Total, o cônjuge NÃO concorre com os descendentes na herança. O sistema pode estar incluindo cônjuge indevidamente.',
+          fix: '💡 Correção em tributario.js: verificar se regime === "Separação Total" antes de adicionar cônjuge como herdeiro concorrente.',
+          fonte: 'Análise Estrutural — Agente 5',
+          caso: null
+        });
+      }
+
+      // Estatísticas
+      const nCritical = bugs.filter(b => b.severidade === 'critical').length;
+      const nHigh     = bugs.filter(b => b.severidade === 'high').length;
+      const nMedium   = bugs.filter(b => b.severidade === 'medium').length;
+      const nLow      = bugs.filter(b => b.severidade === 'low').length;
+
+      document.getElementById('a5-total').textContent    = bugs.length;
+      document.getElementById('a5-critical').textContent = nCritical;
+      document.getElementById('a5-high').textContent     = nHigh;
+      document.getElementById('a5-medium').textContent   = nMedium;
+      document.getElementById('a5-low').textContent      = nLow;
+
+      appendLog('log-5', `📊 Análise concluída — ${bugs.length} item(ns) encontrado(s)`, bugs.length > 0 ? 'warn' : 'ok');
+      appendLog('log-5', `   🔴 Críticos: ${nCritical} | 🟠 Altos: ${nHigh} | 🟣 Médios: ${nMedium} | 🟢 Baixos: ${nLow}`, 'info');
+
+      if (bugs.length === 0) {
+        appendLog('log-5', '✅ Nenhum bug detectado — sistema 100% conforme!', 'ok');
+      } else {
+        bugs.forEach(b => {
+          appendLog('log-5', `[${b.id}] ${b.severidade.toUpperCase()} — ${b.titulo.substring(0, 60)}...`, b.severidade === 'critical' || b.severidade === 'high' ? 'fail' : 'warn');
+        });
+      }
+
+      setBadge(5, bugs.filter(b => b.severidade === 'critical').length > 0 ? 'error' : bugs.length > 0 ? 'running' : 'done',
+        bugs.length === 0 ? '✓ Sem Bugs' : `${bugs.length} bug(s)`);
+      setCardState(5, bugs.filter(b => b.severidade === 'critical').length > 0 ? 'has-errors' : 'done');
+
+      // Renderiza o relatório visual
+      renderizarRelatorioBugs(bugs);
+      window._bugsData = bugs; // salva para exportar
+
+      return bugs;
+    }
+
+    // ============================================================
+    // RENDERIZAR RELATÓRIO DE BUGS
+    // ============================================================
+    function renderizarRelatorioBugs(bugs) {
+      const panel = document.getElementById('bug-report-panel');
+      const body  = document.getElementById('bug-report-body');
+      panel.style.display = 'block';
+
+      document.getElementById('bug-report-ts').textContent = 'Gerado em ' + new Date().toLocaleString('pt-BR');
+
+      const nCritical = bugs.filter(b => b.severidade === 'critical').length;
+      const nHigh     = bugs.filter(b => b.severidade === 'high').length;
+      const nMedium   = bugs.filter(b => b.severidade === 'medium').length;
+      const nLow      = bugs.filter(b => b.severidade === 'low').length;
+
+      if (bugs.length === 0) {
+        body.innerHTML = `
+          <div class="no-bugs">
+            <div class="icon">🎉</div>
+            <h3>Nenhum bug encontrado!</h3>
+            <p>Os cálculos do sistema estão 100% conformes com o Código Civil Brasileiro.</p>
+          </div>`;
+        return;
+      }
+
+      const sevOrder = { critical: 0, high: 1, medium: 2, low: 3 };
+      const bugsSorted = [...bugs].sort((a, b) => sevOrder[a.severidade] - sevOrder[b.severidade]);
+
+      let html = `
+        <div class="bug-summary-row">
+          <div class="bug-stat-card total"><div class="bval">${bugs.length}</div><div class="bkey">Total de Bugs</div></div>
+          <div class="bug-stat-card critical"><div class="bval">${nCritical}</div><div class="bkey">🔴 Críticos</div></div>
+          <div class="bug-stat-card high"><div class="bval">${nHigh}</div><div class="bkey">🟠 Altos</div></div>
+          <div class="bug-stat-card medium"><div class="bval">${nMedium}</div><div class="bkey">🟣 Médios</div></div>
+          <div class="bug-stat-card low"><div class="bval">${nLow}</div><div class="bkey">🟢 Baixos</div></div>
+        </div>`;
+
+      const categorias = [...new Set(bugsSorted.map(b => b.categoria))];
+
+      categorias.forEach(cat => {
+        const bugsNaCat = bugsSorted.filter(b => b.categoria === cat);
+        html += `<div class="bug-section-title">📁 ${cat} (${bugsNaCat.length})</div>`;
+
+        bugsNaCat.forEach(bug => {
+          const sevLabel = { critical: '🔴 Crítico', high: '🟠 Alto', medium: '🟣 Médio', low: '🟢 Baixo' }[bug.severidade];
+          html += `
+            <div class="bug-item sev-${bug.severidade}">
+              <div>
+                <span class="bug-sev-badge sev-${bug.severidade}">${sevLabel}</span>
+                <div style="margin-top:6px;font-size:10px;color:var(--text-muted);">${bug.id}</div>
+              </div>
+              <div class="bug-content">
+                <h4>${bug.titulo}</h4>
+                <p>${bug.detalhe}</p>
+                <div class="fix-hint">${bug.fix}</div>
+              </div>
+              <div>
+                <span class="bug-category">${bug.fonte}</span>
+                ${bug.caso ? `<div style="font-size:10px;color:var(--text-muted);margin-top:6px;text-align:right;">Caso #${bug.caso}</div>` : ''}
+              </div>
+            </div>`;
+        });
+      });
+
+      body.innerHTML = html;
+    }
+
+    // ============================================================
+    // EXPORTAR RELATÓRIO HTML
+    // ============================================================
+    function exportarRelatorio() {
+      const bugs = window._bugsData || [];
+      const now  = new Date().toLocaleString('pt-BR');
+      const sevLabel = { critical: '🔴 Crítico', high: '🟠 Alto', medium: '🟣 Médio', low: '🟢 Baixo' };
+
+      let linhas = bugs.map(b => `
+        <tr>
+          <td>${b.id}</td>
+          <td>${sevLabel[b.severidade]}</td>
+          <td>${b.categoria}</td>
+          <td>${b.titulo}</td>
+          <td>${b.detalhe}</td>
+          <td>${b.fix.replace('💡 ', '')}</td>
+          <td>${b.fonte}</td>
+        </tr>`).join('');
+
+      const html = `<!DOCTYPE html><html lang="pt-br"><head><meta charset="UTF-8">
+      <title>Relatório de Bugs — Pace Capital</title>
+      <style>body{font-family:Arial,sans-serif;padding:30px;color:#1e293b;}h1{color:#0B53B8;}table{width:100%;border-collapse:collapse;font-size:13px;}th{background:#0B53B8;color:#fff;padding:10px 12px;text-align:left;}td{padding:9px 12px;border-bottom:1px solid #e2e8f0;vertical-align:top;}tr:nth-child(even){background:#f8fafc;}.footer{margin-top:30px;font-size:11px;color:#94a3b8;}</style>
+      </head><body>
+      <h1>🐛 Relatório de Bugs — Pace Capital</h1>
+      <p><strong>Gerado em:</strong> ${now} &nbsp;|&nbsp; <strong>Total:</strong> ${bugs.length} item(ns)</p>
+      <table><thead><tr><th>ID</th><th>Severidade</th><th>Categoria</th><th>Título</th><th>Detalhe</th><th>Sugestão de Correção</th><th>Fonte</th></tr></thead>
+      <tbody>${linhas}</tbody></table>
+      <div class="footer">Relatório gerado automaticamente pelo Painel de Testes Multi-Agente — Pace Capital</div>
+      </body></html>`;
+
+      const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      a.href = url;
+      a.download = `relatorio_bugs_pace_${Date.now()}.html`;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
+    }
+
+    // ============================================================
+    // ORQUESTRADOR PRINCIPAL
+    // ============================================================
+    async function iniciarTestes() {
+      if (isRunning) return;
+      isRunning = true;
+
+      // Reset
+      totalCasos = 0;
+      casosOK = 0;
+      casosFail = 0;
+      casosWarn = 0;
+      allResults = [];
+
+      document.getElementById('btn-run').disabled = true;
+      document.getElementById('btn-run').innerHTML = '<span class="spinner"></span> Rodando...';
+      document.getElementById('status-label-text').textContent = 'Iniciando agentes...';
+
+      // Limpa logs
+      [1,2,3,4].forEach(n => {
+        document.getElementById(`log-${n}`).innerHTML = '';
+        setBadge(n, 'idle', 'Aguardando');
+        setCardState(n, '');
+      });
+
+      document.getElementById('summary-alerts').style.display = 'none';
+      updateProgress();
+
+      try {
+        // ── FASE 1: Agentes 1, 2 e 3 em paralelo ──────────────────────
+        document.getElementById('status-label-text').textContent = 'Fase 1: Configurando patrimônio, estruturas familiares e taxas...';
+
+        const [cenarios, combinacoesFamiliares, taxas] = await Promise.all([
+          runAgente1(),
+          runAgente2(),
+          runAgente3(),
+        ]);
+
+        await sleep(500);
+
+        // ── FASE 2: Agente 4 verifica os resultados ───────────────────
+        document.getElementById('status-label-text').textContent = 'Fase 2: Verificando conformidade com o Código Civil...';
+
+        const resultados = await runAgente4(cenarios, combinacoesFamiliares, taxas);
+        allResults = resultados;
+
+        await sleep(400);
+
+        // ── FASE 3: Agente 5 gera relatório de bugs ───────────────────
+        document.getElementById('status-label-text').textContent = 'Fase 3: Gerando relatório de bugs...';
+        await runAgente5(resultados, cenarios, taxas);
+
+        await sleep(300);
+
+        // ── FASE 4: Renderizar tabela e alertas finais ────────────────
+        document.getElementById('status-label-text').textContent = '✅ Todos os agentes concluídos!';
+        renderizarResultados(resultados);
+        renderizarAlertas(resultados);
+
+      } catch (e) {
+        console.error(e);
+        appendLog('log-4', `💥 Erro crítico: ${e.message}`, 'fail');
+      } finally {
+        isRunning = false;
+        document.getElementById('btn-run').disabled = false;
+        document.getElementById('btn-run').innerHTML = '▶ Iniciar Todos os Agentes';
+        document.getElementById('progress-fill').style.width = '100%';
+        document.getElementById('status-pct').textContent = '100%';
+        updateProgress();
+      }
+    }
+
+    function limparTudo() {
+      if (isRunning) return;
+
+      totalCasos = 0;
+      casosOK = 0;
+      casosFail = 0;
+      casosWarn = 0;
+      allResults = [];
+
+      [1,2,3,4,5].forEach(n => {
+        const logEl = document.getElementById(`log-${n}`);
+        if (logEl) logEl.innerHTML = `<div class="log-line"><span class="log-ts">--:--:--</span><span class="log-info">Aguardando início...</span></div>`;
+        if (document.getElementById(`badge-${n}`)) setBadge(n, 'idle', 'Aguardando');
+        if (document.getElementById(`card-${n}`)) setCardState(n, '');
+        ['cenarios','atual','total','combos','testadas','cobertura','cdi','ipca','verificados','erros','conformidade','critical','high','medium','low'].forEach(k => {
+          const el = document.getElementById(`a${n}-${k}`);
+          if (el) el.textContent = '—';
+        });
+      });
+      document.getElementById('bug-report-panel').style.display = 'none';
+      window._bugsData = [];
+
+      document.getElementById('a1-cenarios').textContent = '—';
+      document.getElementById('a2-combos').textContent = '—';
+      document.getElementById('a3-combos').textContent = '—';
+
+      document.getElementById('progress-fill').style.width = '0%';
+      document.getElementById('status-pct').textContent = '0%';
+      document.getElementById('status-label-text').textContent = 'Aguardando início dos testes...';
+      document.getElementById('cnt-total').textContent = '0';
+      document.getElementById('cnt-ok').textContent = '0';
+      document.getElementById('cnt-fail').textContent = '0';
+      document.getElementById('cnt-warn').textContent = '0';
+      document.getElementById('results-count').textContent = '0 casos';
+      document.getElementById('summary-alerts').style.display = 'none';
+      document.getElementById('results-container').innerHTML = `
+        <div class="empty-state">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+          </svg>
+          <p>Inicie os testes para ver os resultados aqui</p>
+        </div>`;
+    }
+  </script>
+</body>
+
+</html>

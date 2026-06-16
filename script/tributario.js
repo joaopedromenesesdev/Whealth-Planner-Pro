@@ -40,7 +40,7 @@ window.onload = function () {
   }
 
   let totalA = rf + rv + inter + prev + offshore;
-  let totalI = apt + casa + terr + galp;
+  let totalI = apt + casa + terr + galp + parseValor(dados.bens_particulares);
 
   criarGraficos(dados);
   renderizarGraficoEvolucao();
@@ -275,6 +275,7 @@ function criarGraficos(dados, scope = document) {
   let casa = parseValor(dados.casa);
   let terr = parseValor(dados.terr);
   let galp = parseValor(dados.galp);
+  let bens_particulares = parseValor(dados.bens_particulares);
 
   let bens = parseValor(dados.bens);
 
@@ -292,7 +293,7 @@ function criarGraficos(dados, scope = document) {
   }
 
   let totalA = rf + rv + inter + prev + offshore;
-  let totalI = apt + casa + terr + galp;
+  let totalI = apt + casa + terr + galp + bens_particulares;
   let totalGeral = totalA + totalI + bens + totalEmpresas;
 
   // Lógica de visibilidade: Esconde se o valor for zero
@@ -365,6 +366,7 @@ function criarGraficos(dados, scope = document) {
   let pCASA = totalI ? (casa / totalI) * 100 : 0;
   let pTERR = totalI ? (terr / totalI) * 100 : 0;
   let pGALP = totalI ? (galp / totalI) * 100 : 0;
+  let pBENS_PART = totalI ? (bens_particulares / totalI) * 100 : 0;
 
   const ctxImov = scope.querySelector("#grafico_imoveis");
   if (ctxImov) {
@@ -372,8 +374,8 @@ function criarGraficos(dados, scope = document) {
     graficoImoveis = new Chart(ctxImov, {
       type: "bar",
       data: {
-        labels: ["Apartamento", "Casa", "Terreno", "Galpão/Imóvel Rural"],
-        datasets: [{ data: [pAPT, pCASA, pTERR, pGALP], backgroundColor: coresPaleta, borderRadius: 6 }]
+        labels: ["Apartamento", "Casa", "Terreno", "Galpão/Imóvel Rural", "Bens Particulares"],
+        datasets: [{ data: [pAPT, pCASA, pTERR, pGALP, pBENS_PART], backgroundColor: coresPaleta, borderRadius: 6 }]
       },
       options: baseOptions(true, anim)
     });
@@ -441,10 +443,14 @@ function carregarResumoSidebar() {
   const dadosPatrimonio = JSON.parse(sessionStorage.getItem("patrimonio_dados")) || {};
   const prev = parseValor(dadosPatrimonio.prev);
 
-  const dadosEvolucao = JSON.parse(sessionStorage.getItem("evolucao_dados")) || { resultados: [] };
+  const dadosEvolucao = JSON.parse(sessionStorage.getItem("evolucao_dados")) || { resultados: [], resultadosPrev: [] };
   const totalProjetado = (dadosEvolucao.resultados && dadosEvolucao.resultados.length > 0)
     ? dadosEvolucao.resultados[dadosEvolucao.resultados.length - 1]
     : totalAtual;
+
+  const prevProjetado = (dadosEvolucao.resultadosPrev && dadosEvolucao.resultadosPrev.length > 0)
+    ? dadosEvolucao.resultadosPrev[dadosEvolucao.resultadosPrev.length - 1]
+    : prev;
 
   const dadosFamilia = JSON.parse(sessionStorage.getItem("familia")) || {};
   const regime = dadosFamilia.regime || "Não informado";
@@ -460,7 +466,7 @@ function carregarResumoSidebar() {
   if (elRegime) elRegime.innerText = regime;
 
   // Armazena para uso no cálculo
-  window.dadosCalculo = { totalAtual, totalProjetado, prev, regime };
+  window.dadosCalculo = { totalAtual, totalProjetado, prev, prevProjetado, regime };
 }
 
 function atualizarITCMD() {
@@ -475,7 +481,7 @@ function atualizarITCMD() {
 function calcularPrejuizo() {
   if (!window.dadosCalculo) carregarResumoSidebar();
 
-  const { totalAtual, totalProjetado, prev, regime } = window.dadosCalculo;
+  const { totalAtual, totalProjetado, prev, prevProjetado, regime } = window.dadosCalculo;
 
   const itcmd = Number(document.getElementById("taxa_itcmd")?.value) || 0;
   const honorarios = Number(document.getElementById("taxa_honorarios")?.value) || 0;
@@ -488,7 +494,7 @@ function calcularPrejuizo() {
 
   // Base de Cálculo: Abate a previdência e a meação
   const baseAtual = Math.max(0, totalAtual - prev) * multiplicadorRegime;
-  const baseProjetada = Math.max(0, totalProjetado - prev) * multiplicadorRegime;
+  const baseProjetada = Math.max(0, totalProjetado - prevProjetado) * multiplicadorRegime;
 
   const prejuizoAtual = baseAtual * (taxaTotal / 100);
   const prejuizoProjetado = baseProjetada * (taxaTotal / 100);
@@ -597,86 +603,173 @@ function calcularPartilha(total, regime) {
 
   // 1. DEFINIÇÃO DE MEAÇÃO E BASE DA HERANÇA
   const regimeL = regime.toLowerCase();
-  const comunhao = regimeL.includes("comunhão parcial") || regimeL.includes("comunhão universal");
+  const comunhaoParcial = regimeL.includes("comunhão parcial");
+  const comunhaoUniversal = regimeL.includes("comunhão universal");
   const separacaoTotal = regimeL.includes("separação total");
-  const participacaoFinal = regimeL.includes("participação final");
+  const comunhao = comunhaoParcial || comunhaoUniversal;
+
+  let bensComuns = 0;
+  let bensParticularesCalculo = 0;
 
   if (casado) {
-    if (comunhao) {
-      meacao = totalCalculo * 0.5;
-      heranca = totalCalculo * 0.5;
-      labels.push("Cônjuge (Meação)");
-      fatias.push(meacao);
+    if (comunhaoUniversal) {
+      bensComuns = totalCalculo;
+      bensParticularesCalculo = 0;
+    } else if (comunhaoParcial) {
+      bensParticularesCalculo = Math.min(totalCalculo, parseValor(dadosPatrimonio.bens_particulares));
+      bensComuns = Math.max(0, totalCalculo - bensParticularesCalculo);
+    } else if (separacaoTotal) {
+      bensComuns = 0;
+      bensParticularesCalculo = totalCalculo;
     } else {
-      meacao = 0;
-      heranca = totalCalculo;
+      bensComuns = totalCalculo;
+      bensParticularesCalculo = 0;
     }
+  } else {
+    bensComuns = 0;
+    bensParticularesCalculo = totalCalculo;
   }
 
-  // 2. DIVISÃO DA HERANÇA (CC art. 1.829 e 1.832)
-  if (temFilhos && qtdFilhos > 0) {
-    // Se casado, concorre com filhos apenas se não for Separação Total
-    if (casado && !separacaoTotal) {
-      let quotaConjuge, quotaPorFilho;
-      if (qtdFilhos >= 3) {
-        // Garantia de 1/4 da herança para o cônjuge (Art. 1.832)
-        quotaConjuge = heranca * 0.25;
-        quotaPorFilho = (heranca - quotaConjuge) / qtdFilhos;
-      } else {
-        // Divisão igualitária
-        const totalPartes = qtdFilhos + 1;
-        quotaConjuge = heranca / totalPartes;
-        quotaPorFilho = heranca / totalPartes;
-      }
+  // Meação (somente sobre bens comuns)
+  if (casado && comunhao) {
+    meacao = bensComuns * 0.5;
+  }
 
-      labels.push("Cônjuge (Herança)");
-      fatias.push(quotaConjuge);
-      for (let i = 1; i <= qtdFilhos; i++) {
-        labels.push(`Filho ${i}`);
-        fatias.push(quotaPorFilho);
+  // Distribuição da Meação
+  if (meacao > 0) {
+    labels.push("Cônjuge (Meação)");
+    fatias.push(meacao);
+  }
+
+  // Divisão da Herança dos Bens Comuns
+  let herancaComuns = bensComuns * (casado && comunhao ? 0.5 : 1);
+  let cHerancaComuns = 0;
+  let filhosComuns = 0;
+  let paisComuns = 0;
+  let colateraisComuns = 0;
+  let uniaoComuns = 0;
+
+  if (temFilhos && qtdFilhos > 0) {
+    if (casado && comunhao) {
+      // Regra: "quando o cônjuge for meiero ele pegue os 50% e o resto da herança fique pros filhos"
+      cHerancaComuns = 0;
+      filhosComuns = herancaComuns;
+    } else if (casado && !separacaoTotal) {
+      let quotaConjuge;
+      if (qtdFilhos >= 3) {
+        quotaConjuge = herancaComuns * 0.25;
+      } else {
+        quotaConjuge = herancaComuns / (qtdFilhos + 1);
       }
+      cHerancaComuns = quotaConjuge;
+      filhosComuns = herancaComuns - cHerancaComuns;
     } else {
-      // Solteiro, divorciado, viúvo, ou regime de Separação Total -> Cônjuge não herda na concorrência com filhos
-      const quotaPorFilho = heranca / qtdFilhos;
-      for (let i = 1; i <= qtdFilhos; i++) {
-        labels.push(`Filho ${i}`);
-        fatias.push(quotaPorFilho);
-      }
+      cHerancaComuns = 0;
+      filhosComuns = herancaComuns;
     }
   } else if (possuiPais && qtdPais > 0) {
     if (casado) {
-      // Concorrência com ascendentes (Art. 1.829, II e 1.837)
-      const valorParte = heranca / (qtdPais + 1);
-      labels.push("Cônjuge (Herança)");
-      fatias.push(valorParte);
-      for (let i = 1; i <= qtdPais; i++) {
-        labels.push(qtdPais === 2 ? (i === 1 ? "Pai" : "Mãe") : "Ascendente");
-        fatias.push(valorParte);
-      }
+      cHerancaComuns = herancaComuns / (qtdPais + 1);
+      paisComuns = herancaComuns - cHerancaComuns;
     } else {
-      // Sem cônjuge, herança vai inteira para os pais/ascendentes
-      const valorParte = heranca / qtdPais;
-      for (let i = 1; i <= qtdPais; i++) {
-        labels.push(qtdPais === 2 ? (i === 1 ? "Pai" : "Mãe") : "Ascendente");
-        fatias.push(valorParte);
-      }
+      cHerancaComuns = 0;
+      paisComuns = herancaComuns;
     }
   } else if (casado) {
-    // Cônjuge herdeiro único (Classe III)
-    labels.push("Cônjuge (Herança)");
-    fatias.push(heranca);
+    cHerancaComuns = herancaComuns;
   } else if (possuiColaterais && qtdColaterais > 0) {
-    // Colaterais (irmãos, sobrinhos, tios)
-    const valorParte = heranca / qtdColaterais;
+    colateraisComuns = herancaComuns;
+  } else {
+    uniaoComuns = herancaComuns;
+  }
+
+  // Divisão da Herança dos Bens Particulares
+  let herancaParticulares = bensParticularesCalculo;
+  let cHerancaParticulares = 0;
+  let filhosParticulares = 0;
+  let paisParticulares = 0;
+  let colateraisParticulares = 0;
+  let uniaoParticulares = 0;
+
+  if (temFilhos && qtdFilhos > 0) {
+    if (casado && separacaoTotal) {
+      // Na Separação Total, o cônjuge não é meeiro, então ele concorre (herda) com os filhos nos bens particulares
+      let quotaConjuge;
+      if (qtdFilhos >= 3) {
+        quotaConjuge = herancaParticulares * 0.25;
+      } else {
+        quotaConjuge = herancaParticulares / (qtdFilhos + 1);
+      }
+      cHerancaParticulares = quotaConjuge;
+      filhosParticulares = herancaParticulares - cHerancaParticulares;
+    } else {
+      // Nos regimes de Comunhão (Parcial/Universal), o cônjuge já é meeiro e não concorre na herança se houver filhos.
+      // Toda a herança (tanto bens comuns quanto particulares) vai para os filhos.
+      cHerancaParticulares = 0;
+      filhosParticulares = herancaParticulares;
+    }
+  } else if (possuiPais && qtdPais > 0) {
+    if (casado) {
+      cHerancaParticulares = herancaParticulares / (qtdPais + 1);
+      paisParticulares = herancaParticulares - cHerancaParticulares;
+    } else {
+      cHerancaParticulares = 0;
+      paisParticulares = herancaParticulares;
+    }
+  } else if (casado) {
+    cHerancaParticulares = herancaParticulares;
+  } else if (possuiColaterais && qtdColaterais > 0) {
+    colateraisParticulares = herancaParticulares;
+  } else {
+    uniaoParticulares = herancaParticulares;
+  }
+
+  // Total da Herança do Cônjuge
+  let totalHerancaConjuge = cHerancaComuns + cHerancaParticulares;
+  if (totalHerancaConjuge > 0) {
+    labels.push("Cônjuge (Herança)");
+    fatias.push(totalHerancaConjuge);
+  }
+
+  // Total dos Filhos
+  let totalFilhos = filhosComuns + filhosParticulares;
+  if (totalFilhos > 0) {
+    const quotaPorFilho = totalFilhos / qtdFilhos;
+    for (let i = 1; i <= qtdFilhos; i++) {
+      labels.push(`Filho ${i}`);
+      fatias.push(quotaPorFilho);
+    }
+  }
+
+  // Total dos Pais
+  let totalPais = paisComuns + paisParticulares;
+  if (totalPais > 0) {
+    const quotaPorPai = totalPais / qtdPais;
+    for (let i = 1; i <= qtdPais; i++) {
+      labels.push(qtdPais === 2 ? (i === 1 ? "Pai" : "Mãe") : "Ascendente");
+      fatias.push(quotaPorPai);
+    }
+  }
+
+  // Total dos Colaterais
+  let totalColaterais = colateraisComuns + colateraisParticulares;
+  if (totalColaterais > 0) {
+    const quotaPorColateral = totalColaterais / qtdColaterais;
     for (let i = 1; i <= qtdColaterais; i++) {
       labels.push(`Colateral ${i}`);
-      fatias.push(valorParte);
+      fatias.push(quotaPorColateral);
     }
-  } else {
-    // Sem herdeiros familiares
-    labels.push("Município / DF / União");
-    fatias.push(heranca);
   }
+
+  // União
+  let totalUniao = uniaoComuns + uniaoParticulares;
+  if (totalUniao > 0) {
+    labels.push("Município / DF / União");
+    fatias.push(totalUniao);
+  }
+
+  // Definir herança para calcularSegundaMorte
+  heranca = totalCalculo - meacao;
 
   // Atribui cores consistentes: Cônjuge sempre Azul (0), Filhos em diante
   labels.forEach((label, i) => {
@@ -702,17 +795,20 @@ function calcularPartilha(total, regime) {
       </li>`;
     });
     
-    // Adiciona Previdência APENAS na lista textual (fora do gráfico de herança)
-    if (prev > 0) {
-      let pctPrev = (prev / total) * 100;
-      html += `<li style="margin-bottom: 10px; padding-left: 15px; border-left: 3px solid #6F42C1">
-        <strong>Previdência (Transmissão Direta):</strong> R$ ${prev.toLocaleString("pt-BR", { maximumFractionDigits: 0 })} 
-        <span style="opacity: 0.6; font-size: 12px;">(${pctPrev.toFixed(1)}%)</span>
-      </li>`;
-    }
-    
     html += "</ul>";
     lista.innerHTML = html;
+  }
+
+  // Preenchimento da Previdência Sucessória (fora da herança/segunda morte)
+  const divPrev = document.getElementById("container_previdencia_sucessao");
+  if (divPrev) {
+    if (prev > 0) {
+      let pctPrev = (prev / total) * 100;
+      divPrev.style.display = "block";
+      divPrev.innerHTML = `<strong>💜 Previdência Privada (Transmissão Direta):</strong> R$ ${prev.toLocaleString("pt-BR", { maximumFractionDigits: 0 })} <span style="opacity: 0.7; font-size: 12px;">(${pctPrev.toFixed(1)}% do patrimônio total)</span>.<br>Por lei, os planos de previdência privada (VGBL/PGBL) não entram no processo de inventário, sendo repassados diretamente aos beneficiários indicados, sem incidência de ITCMD na maioria dos estados e sem custos de partilha.`;
+    } else {
+      divPrev.style.display = "none";
+    }
   }
 
   // 4. RENDERIZAR GRÁFICO

@@ -30,6 +30,7 @@ window.onload = async function () {
 
   // Variável global para o cálculo
   window.patrimonioInicialEvolucao = totalRentavel;
+  window.prevInicialEvolucao = dadosPatrimonio.prev ? parseV(dadosPatrimonio.prev) : 0;
 
   const aviso = document.getElementById("aviso_sem_patrimonio");
   // Só mostra o aviso se realmente não houver NADA no sistema
@@ -208,6 +209,7 @@ function parseValue(id) {
 function calcular() {
   // Usa o valor pré-calculado (sem bens móveis)
   const valorInicial = window.patrimonioInicialEvolucao || 0;
+  const prevInicial = window.prevInicialEvolucao || 0;
   const taxaAnual = parseValue("taxa") / 100;
   const aporteMensal = parseValue("aporte_mensal");
   const anosProjecao = Number(document.getElementById("anos").value);
@@ -218,10 +220,12 @@ function calcular() {
   const valoresArr = [];
   const cdiArr = [];
   const ipcaArr = [];
+  const prevResultados = [];
 
   let valorAcumulado = valorInicial;
   let cdiAcumulado = valorInicial;
   let ipcaAcumulado = valorInicial;
+  let prevAcumulado = prevInicial;
 
   const anoBase = new Date().getFullYear();
 
@@ -240,9 +244,11 @@ function calcular() {
     valoresArr.push(Math.round(valorAcumulado));
     cdiArr.push(Math.round(cdiAcumulado));
     ipcaArr.push(Math.round(ipcaAcumulado));
+    prevResultados.push(Math.round(prevAcumulado));
 
     // Evolução com juros compostos ano a ano
     valorAcumulado = valorAcumulado * (1 + taxaAnual) + aporteAnual;
+    prevAcumulado = prevAcumulado * (1 + taxaAnual);
     cdiAcumulado = cdiAcumulado * (1 + taxaCDIAnual) + aporteAnual;
     ipcaAcumulado = ipcaAcumulado * (1 + taxaIPCAAnual) + aporteAnual;
   }
@@ -272,6 +278,7 @@ function calcular() {
   sessionStorage.setItem("evolucao_dados", JSON.stringify({
     anos: anosArr,
     resultados: valoresArr,
+    resultadosPrev: prevResultados,
     taxa: document.getElementById("taxa").value,
     tempo: anosProjecao,
     aporteAnual: aporteAnual

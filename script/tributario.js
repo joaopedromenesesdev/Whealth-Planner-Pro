@@ -456,13 +456,15 @@ function carregarResumoSidebar() {
   const regime = dadosFamilia.regime || "Não informado";
 
   const elAtual = document.getElementById("resumo_atual");
+  const elPrevAtual = document.getElementById("resumo_prev_atual");
   const elProj = document.getElementById("resumo_projetado");
-  const elPrev = document.getElementById("resumo_prev");
+  const elPrevProj = document.getElementById("resumo_prev_projetada");
   const elRegime = document.getElementById("resumo_regime");
 
   if (elAtual) elAtual.innerText = "R$ " + totalAtual.toLocaleString("pt-BR");
+  if (elPrevAtual) elPrevAtual.innerText = "R$ " + prev.toLocaleString("pt-BR");
   if (elProj) elProj.innerText = "R$ " + totalProjetado.toLocaleString("pt-BR");
-  if (elPrev) elPrev.innerText = "R$ " + prev.toLocaleString("pt-BR");
+  if (elPrevProj) elPrevProj.innerText = "R$ " + prevProjetado.toLocaleString("pt-BR");
   if (elRegime) elRegime.innerText = regime;
 
   // Armazena para uso no cálculo

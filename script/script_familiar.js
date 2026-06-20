@@ -292,8 +292,8 @@ window.onload = function () {
 // MOTOR SUCESSÓRIO INTELIGENTE
 // =========================
 document.getElementById("regime").addEventListener("change", function() {
-  const regime = this.value;
-  if (regime === "comunhao_parcial" || regime === "comunhao_universal") {
+  const regime = (this.value || "").toLowerCase();
+  if (regime.includes("comunhão") || regime.includes("comunhao") || regime.includes("participação final") || regime.includes("aquestos")) {
     // Cria um pequeno aviso de inteligência
     let aviso = document.getElementById("aviso_regime");
     if (!aviso) {

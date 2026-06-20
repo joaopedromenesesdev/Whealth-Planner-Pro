@@ -47,6 +47,13 @@ window.onload = function () {
   renderizarEstruturaFamiliar();
   initPrejuizo();
 
+  // Verifica se deve abrir o preview do PDF automaticamente
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.get("preview") === "true") {
+    setTimeout(() => {
+      abrirPreview();
+    }, 600);
+  }
 };
 
 // =========================
@@ -491,8 +498,9 @@ function calcularPrejuizo() {
 
   const taxaTotal = itcmd + honorarios + custas;
 
-  // Regra do Regime: Se for Comunhão (Parcial ou Universal), incide sobre 50%
-  const multiplicadorRegime = regime.toLowerCase().includes("comunhão") ? 0.5 : 1;
+  // Regra do Regime: Se for Comunhão (Parcial ou Universal) ou Participação Final nos Aquestos, incide sobre 50%
+  const regimeLower = regime.toLowerCase();
+  const multiplicadorRegime = (regimeLower.includes("comunhão") || regimeLower.includes("participação final") || regimeLower.includes("aquestos")) ? 0.5 : 1;
 
   // Base de Cálculo: Abate a previdência e a meação
   const baseAtual = Math.max(0, totalAtual - prev) * multiplicadorRegime;
@@ -561,6 +569,7 @@ function calcularPrejuizo() {
   gerarNarrativaIA(totalAtual, prejuizoAtual, regime);
   calcularPartilha(totalAtual, regime);
   calcularHolding(prejuizoAtual);
+  salvarRelatorioNoHistorico();
 }
 
 // =========================
@@ -605,7 +614,7 @@ function calcularPartilha(total, regime) {
 
   // 1. DEFINIÇÃO DE MEAÇÃO E BASE DA HERANÇA
   const regimeL = regime.toLowerCase();
-  const comunhaoParcial = regimeL.includes("comunhão parcial");
+  const comunhaoParcial = regimeL.includes("comunhão parcial") || regimeL.includes("participação final") || regimeL.includes("aquestos");
   const comunhaoUniversal = regimeL.includes("comunhão universal");
   const separacaoTotal = regimeL.includes("separação total");
   const comunhao = comunhaoParcial || comunhaoUniversal;
@@ -635,12 +644,6 @@ function calcularPartilha(total, regime) {
   // Meação (somente sobre bens comuns)
   if (casado && comunhao) {
     meacao = bensComuns * 0.5;
-  }
-
-  // Distribuição da Meação
-  if (meacao > 0) {
-    labels.push("Cônjuge (Meação)");
-    fatias.push(meacao);
   }
 
   // Divisão da Herança dos Bens Comuns
@@ -694,43 +697,45 @@ function calcularPartilha(total, regime) {
   let uniaoParticulares = 0;
 
   if (temFilhos && qtdFilhos > 0) {
-    if (casado && separacaoTotal) {
-      // Na Separação Total, o cônjuge não é meeiro, então ele concorre (herda) com os filhos nos bens particulares
-      let quotaConjuge;
-      if (qtdFilhos >= 3) {
-        quotaConjuge = herancaParticulares * 0.25;
-      } else {
-        quotaConjuge = herancaParticulares / (qtdFilhos + 1);
-      }
+    if (casado && (comunhaoParcial || separacaoTotal)) {
+      // Para Comunhão Parcial / Participação Final nos Aquestos ou Separação Total, divide igualmente entre cônjuge e filhos
+      let quotaConjuge = herancaParticulares / (qtdFilhos + 1);
       cHerancaParticulares = quotaConjuge;
       filhosParticulares = herancaParticulares - cHerancaParticulares;
     } else {
-      // Nos regimes de Comunhão (Parcial/Universal), o cônjuge já é meeiro e não concorre na herança se houver filhos.
-      // Toda a herança (tanto bens comuns quanto particulares) vai para os filhos.
+      // Comunhão Universal (ou outros regimes não especificados)
       cHerancaParticulares = 0;
       filhosParticulares = herancaParticulares;
     }
-  } else if (possuiPais && qtdPais > 0) {
-    if (casado) {
-      cHerancaParticulares = herancaParticulares / (qtdPais + 1);
-      paisParticulares = herancaParticulares - cHerancaParticulares;
-    } else {
-      cHerancaParticulares = 0;
-      paisParticulares = herancaParticulares;
-    }
-  } else if (casado) {
-    cHerancaParticulares = herancaParticulares;
-  } else if (possuiColaterais && qtdColaterais > 0) {
-    colateraisParticulares = herancaParticulares;
   } else {
-    uniaoParticulares = herancaParticulares;
+    // Se não tiverem filhos
+    if (casado && comunhaoParcial) {
+      // "se não tiverem filhos os bens particulares vão direto pro cônjuge"
+      cHerancaParticulares = herancaParticulares;
+      filhosParticulares = 0;
+    } else if (possuiPais && qtdPais > 0) {
+      if (casado) {
+        cHerancaParticulares = herancaParticulares / (qtdPais + 1);
+        paisParticulares = herancaParticulares - cHerancaParticulares;
+      } else {
+        cHerancaParticulares = 0;
+        paisParticulares = herancaParticulares;
+      }
+    } else if (casado) {
+      cHerancaParticulares = herancaParticulares;
+    } else if (possuiColaterais && qtdColaterais > 0) {
+      colateraisParticulares = herancaParticulares;
+    } else {
+      uniaoParticulares = herancaParticulares;
+    }
   }
 
-  // Total da Herança do Cônjuge
+  // Total da Herança + Meação do Cônjuge (Unificados em uma única barra/fatia)
   let totalHerancaConjuge = cHerancaComuns + cHerancaParticulares;
-  if (totalHerancaConjuge > 0) {
-    labels.push("Cônjuge (Herança)");
-    fatias.push(totalHerancaConjuge);
+  let totalConjuge = meacao + totalHerancaConjuge;
+  if (totalConjuge > 0) {
+    labels.push("Cônjuge (Meação + Herança)");
+    fatias.push(totalConjuge);
   }
 
   // Total dos Filhos
@@ -1254,4 +1259,83 @@ document.addEventListener('revealed', (e) => {
     }
   }
 });
+
+// Auto-salvar no localStorage do Dashboard
+function salvarRelatorioNoHistorico() {
+  const familiaStr = sessionStorage.getItem("familia");
+  if (!familiaStr) return;
+
+  const familia = JSON.parse(familiaStr);
+  const nomeCliente = familia.nome || "Cliente";
+  const nomeAssessor = sessionStorage.getItem("nome_assessor") || "Assessor";
+  const dataReuniao = sessionStorage.getItem("data_reuniao") || new Date().toLocaleDateString("pt-BR");
+  
+  const totalPatrimonio = Number(sessionStorage.getItem("total_patrimonio")) || 0;
+  const prejuizoFinalStr = sessionStorage.getItem("prejuizo_final");
+  let prejuizoTributario = 0;
+  if (prejuizoFinalStr) {
+    const finalObj = JSON.parse(prejuizoFinalStr);
+    prejuizoTributario = finalObj.prejuizoAtual || 0;
+  }
+
+  // Identificador da simulação
+  let reportId = sessionStorage.getItem("current_report_id");
+  if (!reportId) {
+    reportId = "rep_" + Date.now();
+    sessionStorage.setItem("current_report_id", reportId);
+  }
+
+  // Chaves do sessionStorage a persistir
+  const sessionData = {};
+  const keysToSave = [
+    "patrimonio_dados",
+    "total_patrimonio",
+    "nome_assessor",
+    "data_reuniao",
+    "familia",
+    "evolucao_dados",
+    "tributario_inputs",
+    "prejuizo_final",
+    "partilha_dados",
+    "segunda_morte_dados"
+  ];
+  keysToSave.forEach(key => {
+    const val = sessionStorage.getItem(key);
+    if (val) {
+      try {
+        sessionData[key] = JSON.parse(val);
+      } catch (e) {
+        sessionData[key] = val;
+      }
+    }
+  });
+
+  const relatorio = {
+    id: reportId,
+    nomeCliente,
+    nomeAssessor,
+    dataReuniao,
+    totalPatrimonio,
+    prejuizoTributario,
+    dataCriacao: new Date().toISOString(),
+    dadosSessao: sessionData
+  };
+
+  const STORAGE_KEY = "pace_relatorios";
+  let relatorios = [];
+  try {
+    relatorios = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+  } catch (e) {
+    relatorios = [];
+  }
+
+  const index = relatorios.findIndex(r => r.id === reportId);
+  if (index !== -1) {
+    relatorios[index] = relatorio; // Atualiza se já existir
+  } else {
+    relatorios.push(relatorio); // Adiciona novo
+  }
+
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(relatorios));
+}
 

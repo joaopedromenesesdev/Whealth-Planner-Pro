@@ -121,7 +121,7 @@ function renderizarRelatorios(relatorios) {
         </div>
         <h3>Nenhum relatório encontrado</h3>
         <p>Inicie uma nova simulação patrimonial para preencher o seu histórico de relatórios gerados.</p>
-        <a href="index.html" class="btn-new-report" style="margin: 0 auto; display: inline-flex;">
+        <a href="nova_simulacao.html" class="btn-new-report" style="margin: 0 auto; display: inline-flex;">
           <i data-lucide="plus"></i>
           Nova Simulação
         </a>

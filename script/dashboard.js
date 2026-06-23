@@ -236,6 +236,8 @@ function restaurarSessao(id) {
   // Limpa sessão atual e popula com os dados do relatório
   sessionStorage.clear();
   Object.keys(rep.dadosSessao).forEach(key => {
+    // Ignora current_report_id do dadosSessao para evitar conflitos
+    if (key === "current_report_id") return;
     const val = rep.dadosSessao[key];
     if (typeof val === "object") {
       sessionStorage.setItem(key, JSON.stringify(val));
@@ -243,6 +245,8 @@ function restaurarSessao(id) {
       sessionStorage.setItem(key, val);
     }
   });
+  // Sempre define o ID correto por último (garante que não foi sobrescrito)
+  sessionStorage.setItem("current_report_id", id);
 
   return true;
 }

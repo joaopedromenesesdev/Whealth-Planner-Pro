@@ -1297,7 +1297,8 @@ function salvarRelatorioNoHistorico() {
     "tributario_inputs",
     "prejuizo_final",
     "partilha_dados",
-    "segunda_morte_dados"
+    "segunda_morte_dados",
+    "current_report_id"
   ];
   keysToSave.forEach(key => {
     const val = sessionStorage.getItem(key);
@@ -1331,9 +1332,11 @@ function salvarRelatorioNoHistorico() {
 
   const index = relatorios.findIndex(r => r.id === reportId);
   if (index !== -1) {
-    relatorios[index] = relatorio; // Atualiza se já existir
+    // Preserva a data de criação original ao atualizar
+    relatorio.dataCriacao = relatorios[index].dataCriacao || relatorio.dataCriacao;
+    relatorios[index] = relatorio;
   } else {
-    relatorios.push(relatorio); // Adiciona novo
+    relatorios.push(relatorio);
   }
 
   localStorage.setItem(STORAGE_KEY, JSON.stringify(relatorios));

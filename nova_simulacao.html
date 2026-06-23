@@ -440,6 +440,9 @@
   </div>
 
   <script>
+    // Limpa dados de simulações anteriores ao iniciar um novo relatório
+    sessionStorage.clear();
+
     // Controle da Intro Cinematográfica
     window.addEventListener('load', () => {
       // Deixa a intro tocar por 4.5 segundos e depois some

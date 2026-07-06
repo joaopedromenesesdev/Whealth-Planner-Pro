@@ -1,4 +1,4 @@
-let graficoGeral, graficoAplicacoes, graficoImoveis, graficoEmpresas;
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿let graficoGeral, graficoAplicacoes, graficoImoveis, graficoEmpresas;
 Chart.register(ChartDataLabels);
 
 // =========================
@@ -569,7 +569,6 @@ function calcularPrejuizo() {
   gerarNarrativaIA(totalAtual, prejuizoAtual, regime);
   calcularPartilha(totalAtual, regime);
   calcularHolding(prejuizoAtual);
-  salvarRelatorioNoHistorico();
 }
 
 // =========================
@@ -1048,7 +1047,9 @@ function gerarNarrativaIA(total, prejuizo, regime) {
 // =========================
 // PREVIEW E GERAR PDF
 // =========================
-function abrirPreview() {
+async function abrirPreview() {
+  // (save unificado em gerarPDF)
+
   const modal = document.getElementById("modal-preview");
   const modalBody = document.getElementById("modal-body-pdf");
   const reportArea = document.getElementById("area-relatorio");
@@ -1169,6 +1170,8 @@ async function gerarPDF() {
   btn.innerText = "Processando...";
   btn.disabled = true;
 
+  // Garante que o relatório esteja salvo no histórico antes de gerar o PDF
+  await salvarRelatorioNoHistorico();
   try {
     document.body.classList.add("pdf-exporting");
 
@@ -1260,10 +1263,13 @@ document.addEventListener('revealed', (e) => {
   }
 });
 
-// Auto-salvar no localStorage do Dashboard
-function salvarRelatorioNoHistorico() {
+// Auto-salvar no localStorage ou Supabase do Dashboard
+async function salvarRelatorioNoHistorico() {
   const familiaStr = sessionStorage.getItem("familia");
-  if (!familiaStr) return;
+  if (!familiaStr) {
+    console.warn("[salvarRelatorioNoHistorico] Nenhum dado de família no sessionStorage; relatório não será salvo no histórico.");
+    return;
+  }
 
   const familia = JSON.parse(familiaStr);
   const nomeCliente = familia.nome || "Cliente";
@@ -1322,23 +1328,10 @@ function salvarRelatorioNoHistorico() {
     dadosSessao: sessionData
   };
 
-  const STORAGE_KEY = "pace_relatorios";
-  let relatorios = [];
   try {
-    relatorios = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+    await dbSalvarRelatorio(relatorio);
   } catch (e) {
-    relatorios = [];
+    console.error("Falha ao salvar relatório no histórico", e);
   }
-
-  const index = relatorios.findIndex(r => r.id === reportId);
-  if (index !== -1) {
-    // Preserva a data de criação original ao atualizar
-    relatorio.dataCriacao = relatorios[index].dataCriacao || relatorio.dataCriacao;
-    relatorios[index] = relatorio;
-  } else {
-    relatorios.push(relatorio);
-  }
-
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(relatorios));
 }
 

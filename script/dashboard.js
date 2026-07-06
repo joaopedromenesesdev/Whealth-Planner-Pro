@@ -1,43 +1,61 @@
 // ── CONTROLE DO DASHBOARD DE RELATÓRIOS ──
 
+// Cache em memória dos relatórios para filtragem rápida
+let relatoriosCached = [];
+
 document.addEventListener("DOMContentLoaded", () => {
-  // Inicialização e Renderização
-  carregarDashboard();
-  
   // Event listeners para filtros
   document.getElementById("filtro_busca")?.addEventListener("input", filtrarERenderizar);
   document.getElementById("filtro_patrimonio")?.addEventListener("change", filtrarERenderizar);
   document.getElementById("filtro_ordenacao")?.addEventListener("change", filtrarERenderizar);
-  
+
   // Criar ícones do Lucide
   if (window.lucide) {
     window.lucide.createIcons();
   }
+
+  // ── CORREÇÃO DA RACE CONDITION ──
+  // O Supabase restaura a sessão de forma assíncrona após a página carregar.
+  // Se chamarmos dbObterRelatorios() imediatamente no DOMContentLoaded,
+  // a sessão ainda pode não estar disponível e o select() retorna vazio.
+  // Aguardamos o evento onAuthStateChange para garantir que a sessão foi restaurada.
+  const client = window.supabaseClient;
+  if (client) {
+    // onAuthStateChange dispara com o evento INITIAL_SESSION assim que a sessão é restaurada
+    const { data: { subscription } } = client.auth.onAuthStateChange((event, session) => {
+      if (event === "INITIAL_SESSION" || event === "SIGNED_IN") {
+        // Cancela o listener após o primeiro disparo para não recarregar repetidamente
+        subscription.unsubscribe();
+        if (session) {
+          carregarDashboard();
+        } else {
+          // Sem sessão: redireciona para login
+          window.location.href = "login.html";
+        }
+      }
+    });
+  } else {
+    // Sem Supabase configurado: carrega normalmente (usa fallback localStorage)
+    carregarDashboard();
+  }
 });
 
-// Chave do LocalStorage
-const STORAGE_KEY = "pace_relatorios";
-
-// Função para buscar relatórios do LocalStorage
+// Mantém compatibilidade com funções antigas de restauração
 function obterRelatorios() {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
-  } catch (e) {
-    console.error("Erro ao ler relatórios:", e);
-    return [];
+  return relatoriosCached;
+}
+
+// Carregar todas as informações do Dashboard buscando do banco
+async function carregarDashboard() {
+  // Exibe indicador visual de carregamento se desejado
+  const container = document.getElementById("reports_container");
+  if (container) {
+    container.innerHTML = `<div style="text-align:center; padding: 2rem; color: var(--text-muted);"><p>Carregando relatórios...</p></div>`;
   }
-}
 
-// Salva a lista de relatórios no LocalStorage
-function salvarRelatorios(lista) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(lista));
-}
-
-// Carregar todas as informações do Dashboard
-function carregarDashboard() {
-  const relatorios = obterRelatorios();
-  calcularEExibirMetricas(relatorios);
-  renderizarRelatorios(relatorios);
+  relatoriosCached = await dbObterRelatorios();
+  calcularEExibirMetricas(relatoriosCached);
+  renderizarRelatorios(relatoriosCached);
 }
 
 // Calcular as métricas acumuladas (KPIs)
@@ -137,7 +155,7 @@ function renderizarRelatorios(relatorios) {
   relatorios.forEach(rep => {
     const totalPat = Number(rep.totalPatrimonio) || 0;
     const totalPrej = Number(rep.prejuizoTributario) || 0;
-    
+
     // Risco de liquidez: Se prejuízo tributável ultrapassar liquidez (RF + Prev + Fundos + Offshore)
     // Usamos os dados internos salvos da simulação para calcular
     const dados = rep.dadosSessao?.patrimonio_dados || {};
@@ -172,14 +190,14 @@ function renderizarRelatorios(relatorios) {
           </div>
           
           <div class="report-badge-container">
-            ${isRiscoLiquidez ? 
-              `<div class="liquidity-badge danger">
+            ${isRiscoLiquidez ?
+        `<div class="liquidity-badge danger">
                 <i data-lucide="alert-triangle" style="width:14px;height:14px;vertical-align:middle;margin-right:4px;"></i> Risco de Liquidez Alto
-              </div>` : 
-              `<div class="liquidity-badge safe">
+              </div>` :
+        `<div class="liquidity-badge safe">
                 <i data-lucide="check-circle" style="width:14px;height:14px;vertical-align:middle;margin-right:4px;"></i> Liquidez Adequada
               </div>`
-            }
+      }
           </div>
         </div>
         <div class="report-card-footer">
@@ -267,14 +285,13 @@ function editarSimulacao(id) {
 }
 
 // Excluir relatório com confirmação
-function excluirRelatorio(id) {
+async function excluirRelatorio(id) {
   const relatorios = obterRelatorios();
   const rep = relatorios.find(r => r.id === id);
   if (!rep) return;
 
   if (confirm(`Tem certeza que deseja excluir a simulação do cliente ${rep.nomeCliente}?`)) {
-    const atualizados = relatorios.filter(r => r.id !== id);
-    salvarRelatorios(atualizados);
-    carregarDashboard();
+    await dbExcluirRelatorio(id);
+    await carregarDashboard();
   }
 }

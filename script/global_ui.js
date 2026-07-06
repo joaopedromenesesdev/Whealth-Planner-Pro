@@ -19,6 +19,11 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('.reveal').forEach(el => {
         observer.observe(el);
     });
+
+    // Desativa sugestões de histórico (autocomplete) nos campos de entrada do simulador
+    document.querySelectorAll('input').forEach(input => {
+        input.setAttribute('autocomplete', 'off');
+    });
 });
 
 // =========================

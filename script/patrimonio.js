@@ -253,8 +253,135 @@ function baseOptions(isPercent = true, showDatalabels = false) {
 }
 
 // =========================
-// CÁLCULO
+// PTAX - COTAÇÃO DO DÓLAR (BANCO CENTRAL)
 // =========================
+
+// Variável global para guardar a cotação PTAX em memória
+let ptaxCotacao = null;
+let offshoreEmUSD = false;
+
+/**
+ * Busca a média mensal da cotação de venda do dólar (PTAX) do mês atual
+ * via API pública do Banco Central do Brasil (OLINDA). Armazena em cache
+ * no sessionStorage para não repetir chamadas durante a mesma sessão.
+ */
+async function buscarCotacaoPTAX() {
+  // Verifica cache
+  const cacheKey = "ptax_cotacao_cache";
+  const cached = sessionStorage.getItem(cacheKey);
+  if (cached) {
+    const obj = JSON.parse(cached);
+    // Verifica se o cache é do mesmo mês/ano
+    const now = new Date();
+    if (obj.mes === now.getMonth() && obj.ano === now.getFullYear()) {
+      ptaxCotacao = obj.valor;
+      return ptaxCotacao;
+    }
+  }
+
+  try {
+    const now = new Date();
+    const ano = now.getFullYear();
+    const mes = now.getMonth(); // 0-indexed
+    const nomeMeses = ["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"];
+
+    // Período: primeiro ao último dia do mês atual
+    const primeiroDia = new Date(ano, mes, 1);
+    const ultimoDia = new Date(ano, mes + 1, 0);
+
+    // Formata as datas no padrão da API do BCB: MM-DD-YYYY
+    const pad = n => String(n).padStart(2, "0");
+    const dataInicial = `${pad(primeiroDia.getMonth()+1)}-${pad(primeiroDia.getDate())}-${primeiroDia.getFullYear()}`;
+    const dataFinal = `${pad(ultimoDia.getMonth()+1)}-${pad(ultimoDia.getDate())}-${ultimoDia.getFullYear()}`;
+
+    const url = `https://olinda.bcb.gov.br/olinda/servico/PTAX/versao/v1/odata/CotacaoDolarPeriodo(dataInicial=@dataInicial,dataFinalCotacao=@dataFinalCotacao)?@dataInicial='${dataInicial}'&@dataFinalCotacao='${dataFinal}'&$format=json&$select=cotacaoVenda`;
+
+    const resp = await fetch(url);
+    const json = await resp.json();
+
+    if (json.value && json.value.length > 0) {
+      const soma = json.value.reduce((acc, d) => acc + d.cotacaoVenda, 0);
+      const media = soma / json.value.length;
+      ptaxCotacao = parseFloat(media.toFixed(4));
+
+      // Guarda no cache
+      sessionStorage.setItem(cacheKey, JSON.stringify({
+        valor: ptaxCotacao,
+        mes: mes,
+        ano: ano,
+        nomeMes: nomeMeses[mes]
+      }));
+
+      return ptaxCotacao;
+    }
+  } catch(e) {
+    console.error("[PTAX] Falha ao buscar cotação do Banco Central:", e);
+  }
+
+  return null;
+}
+
+/** Alterna o modo de entrada do campo offshore entre BRL e USD */
+async function alternarMoedaOffshore() {
+  offshoreEmUSD = !offshoreEmUSD;
+  const toggleBRL = document.getElementById("toggle_brl");
+  const toggleUSD = document.getElementById("toggle_usd");
+  const prefix = document.getElementById("offshore_prefix");
+  const badge = document.getElementById("offshore_badge");
+  const input = document.getElementById("offshore");
+
+  if (offshoreEmUSD) {
+    // Ativa modo USD
+    toggleBRL.style.background = "";
+    toggleBRL.style.color = "#0B53B8";
+    toggleUSD.style.background = "#0B53B8";
+    toggleUSD.style.color = "#fff";
+    prefix.textContent = "$";
+    badge.style.display = "block";
+    input.value = "";
+    input.placeholder = "0,00";
+
+    // Busca e exibe a cotação
+    const ptaxLabel = document.getElementById("offshore_ptax_valor");
+    ptaxLabel.textContent = "buscando...";
+    const cotacao = await buscarCotacaoPTAX();
+    if (cotacao) {
+      const cached = JSON.parse(sessionStorage.getItem("ptax_cotacao_cache") || "{}");
+      ptaxLabel.textContent = `R$ ${cotacao.toLocaleString("pt-BR", {minimumFractionDigits:4})} (média ${cached.nomeMes || ""}/${cached.ano || ""}) `;
+    } else {
+      ptaxLabel.textContent = "Indisponível (verifique conexão)";
+    }
+  } else {
+    // Volta para modo BRL
+    toggleBRL.style.background = "#0B53B8";
+    toggleBRL.style.color = "#fff";
+    toggleUSD.style.background = "";
+    toggleUSD.style.color = "#0B53B8";
+    prefix.textContent = "R$";
+    badge.style.display = "none";
+    input.value = "";
+    document.getElementById("offshore_convertido").textContent = "";
+  }
+
+  salvarPatrimonio();
+}
+
+/** Atualiza o badge com o valor convertido em BRL em tempo real */
+function atualizarBadgeOffshore() {
+  if (!offshoreEmUSD || !ptaxCotacao) return;
+  const input = document.getElementById("offshore");
+  const valorUSD = parseFloat(
+    (input.value || "0").replace(/\./g, "").replace(",", ".")
+  ) || 0;
+  const valorBRL = valorUSD * ptaxCotacao;
+  const convertidoEl = document.getElementById("offshore_convertido");
+  if (valorUSD > 0) {
+    convertidoEl.textContent = `≈ R$ ${valorBRL.toLocaleString("pt-BR", {minimumFractionDigits:2, maximumFractionDigits:2})}`;
+  } else {
+    convertidoEl.textContent = "";
+  }
+}
+
 function calcular() {
 
   let valoresEmpresas = document.querySelectorAll(".empresa_valor");
@@ -278,7 +405,12 @@ function calcular() {
   let rv = pegar("rv");
   let inter = pegar("inter");
   let prev = pegar("prev");
-  let offshore = pegar("offshore");
+
+  // Se estiver no modo USD, converte usando a cotação PTAX antes de somar
+  let offshoreRaw = pegar("offshore");
+  let offshore = offshoreEmUSD && ptaxCotacao
+    ? offshoreRaw * ptaxCotacao
+    : offshoreRaw;
 
   let totalA = rf + rv + inter + prev + offshore;
 
@@ -419,6 +551,7 @@ function salvarPatrimonio() {
     inter: document.getElementById("inter").value,
     prev: document.getElementById("prev").value,
     offshore: document.getElementById("offshore").value,
+    offshore_modo: offshoreEmUSD ? "usd" : "brl",
 
     apt: document.getElementById("apt").value,
     casa: document.getElementById("casa").value,
@@ -448,10 +581,24 @@ window.onload = function () {
   if (!dados) return;
 
   Object.keys(dados).forEach(id => {
+    if (id === "offshore_modo") return; // tratado separadamente abaixo
     if (document.getElementById(id)) {
       document.getElementById(id).value = dados[id];
     }
   });
+
+  // Restaura o modo de moeda do offshore (BRL ou USD)
+  if (dados.offshore_modo === "usd" && !offshoreEmUSD) {
+    // Ativa o modo USD sem buscar de novo (PTAX pode já estar em cache)
+    alternarMoedaOffshore().then(() => {
+      // Depois de ativar o modo, restaura o valor salvo
+      const offshoreInput = document.getElementById("offshore");
+      if (offshoreInput && dados.offshore) {
+        offshoreInput.value = dados.offshore;
+        atualizarBadgeOffshore();
+      }
+    });
+  }
 
   if (dados.temEmpresas === "sim") {
     document.getElementById("area_empresas").style.display = "block";

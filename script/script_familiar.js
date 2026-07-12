@@ -206,6 +206,9 @@ function salvarDados() {
   };
 
   sessionStorage.setItem("familia", JSON.stringify(dados));
+
+  // Auto-save: persiste progressivamente no Supabase com debounce
+  if (typeof dbAutoSalvar === "function") dbAutoSalvar();
 }
 
 

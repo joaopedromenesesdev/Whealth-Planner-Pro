@@ -570,6 +570,9 @@ function salvarPatrimonio() {
 
   calcular();
   document.querySelectorAll("input, select").forEach(checkFilled);
+
+  // Auto-save: persiste progressivamente no Supabase com debounce
+  if (typeof dbAutoSalvar === "function") dbAutoSalvar();
 };
 
 // =========================

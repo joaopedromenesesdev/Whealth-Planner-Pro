@@ -7,6 +7,14 @@ const SUPABASE_ANON_KEY = "sb_publishable_xs48cfyAqOY8Udb7LxdZrQ_ow28G3ec";
 let supabaseClient = null;
 
 if (SUPABASE_URL && SUPABASE_ANON_KEY && window.supabase) {
-  supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    auth: {
+      persistSession: true,          // Mantém a sessão entre recarregamentos
+      storageKey: "pace_supabase_auth", // Chave única no localStorage para a sessão
+      storage: window.localStorage,  // Usa localStorage (persiste após fechar o browser)
+      autoRefreshToken: true,        // Renova o token automaticamente
+      detectSessionInUrl: false      // Evita problemas com URLs file://
+    }
+  });
   window.supabaseClient = supabaseClient;
 }

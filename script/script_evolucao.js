@@ -283,6 +283,9 @@ function calcular() {
     tempo: anosProjecao,
     aporteAnual: aporteAnual
   }));
+
+  // Auto-save: persiste progressivamente no Supabase com debounce
+  if (typeof dbAutoSalvar === "function") dbAutoSalvar();
 }
 
 // =========================

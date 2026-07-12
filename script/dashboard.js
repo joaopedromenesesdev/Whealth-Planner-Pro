@@ -14,28 +14,44 @@ document.addEventListener("DOMContentLoaded", () => {
     window.lucide.createIcons();
   }
 
-  // ── CORREÇÃO DA RACE CONDITION ──
+  // ── CORREÇÃO DA RACE CONDITION + FALLBACK FILE:// ──
   // O Supabase restaura a sessão de forma assíncrona após a página carregar.
-  // Se chamarmos dbObterRelatorios() imediatamente no DOMContentLoaded,
-  // a sessão ainda pode não estar disponível e o select() retorna vazio.
-  // Aguardamos o evento onAuthStateChange para garantir que a sessão foi restaurada.
+  // Em origens file:// o evento INITIAL_SESSION pode não disparar.
+  // Usamos um timeout como fallback para garantir que o dashboard sempre carrega.
   const client = window.supabaseClient;
   if (client) {
-    // onAuthStateChange dispara com o evento INITIAL_SESSION assim que a sessão é restaurada
+    let carregado = false;
+
+    // Fallback: se após 4s a sessão não foi restaurada, tenta carregar mesmo assim
+    const fallbackTimer = setTimeout(async () => {
+      if (!carregado) {
+        carregado = true;
+        console.warn("[Dashboard] Timeout aguardando sessão Supabase. Tentando obter relatórios do banco.");
+        // Tenta obter sessão uma última vez
+        const { data: { session } } = await client.auth.getSession().catch(() => ({ data: { session: null } }));
+        if (!session) {
+          window.location.href = "login.html";
+        } else {
+          carregarDashboard();
+        }
+      }
+    }, 4000);
+
     const { data: { subscription } } = client.auth.onAuthStateChange((event, session) => {
       if (event === "INITIAL_SESSION" || event === "SIGNED_IN") {
-        // Cancela o listener após o primeiro disparo para não recarregar repetidamente
+        if (carregado) return;
+        carregado = true;
+        clearTimeout(fallbackTimer);
         subscription.unsubscribe();
         if (session) {
           carregarDashboard();
         } else {
-          // Sem sessão: redireciona para login
           window.location.href = "login.html";
         }
       }
     });
   } else {
-    // Sem Supabase configurado: carrega normalmente (usa fallback localStorage)
+    // Sem Supabase configurado: tenta carregar relatórios do banco
     carregarDashboard();
   }
 });

@@ -283,14 +283,149 @@
       </div>
     </div>
 
-    <!-- PÁGINA 3: PLANEJAMENTO SUCESSÓRIO DETALHADO -->
+    <!-- PÁGINA 3: ESTRATÉGIAS E CONSEQUÊNCIAS -->
+    <div class="pagina nova-pagina">
+      <div class="header-relatorio">
+        <div class="logo-relatorio">Pace Capital</div>
+        <div class="tag-relatorio">Estratégias Sucessórias</div>
+      </div>
+
+      <div style="margin-bottom: 40px; margin-top: 20px;">
+        <!-- TABELA DE HERANÇA LÍQUIDA (ESTRATÉGIA 1) -->
+        <div style="margin-bottom: 30px; background: #fcfdfe; padding: 25px; border-radius: 16px; border: 1px solid #f0f4f9; box-shadow: 0 4px 20px rgba(0,0,0,0.02);">
+          <h4 style="color: var(--primary); margin: 0 0 15px 0; font-size: 16px; font-weight: 700; border-bottom: 2px solid var(--primary); padding-bottom: 8px;">Estratégia 1 | Não realizar planejamento</h4>
+          <table style="width: 100%; border-collapse: collapse; font-family: 'Outfit', sans-serif; font-size: 14px;">
+            <thead>
+              <tr style="border-bottom: 1.5px solid #e1e8f0; text-align: left;">
+                <th style="padding: 10px 0; color: var(--text-muted); font-weight: 600; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">Item</th>
+                <th style="padding: 10px 0; text-align: right; color: var(--text-muted); font-weight: 600; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">Valor</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr style="border-bottom: 1px solid #f0f4f9;">
+                <td style="padding: 12px 0; color: var(--text-main); font-weight: 500;">Patrimônio Inicial</td>
+                <td style="padding: 12px 0; text-align: right; font-weight: 600; color: var(--text-main);" id="tabela_patrimonio_inicial">R$ 0,00</td>
+              </tr>
+              <tr style="border-bottom: 1px solid #f0f4f9;">
+                <td style="padding: 12px 0; color: var(--text-main); font-weight: 500;">Custos da sucessão</td>
+                <td style="padding: 12px 0; text-align: right; font-weight: 600; color: #E53935;" id="tabela_custos_sucessao">R$ 0,00</td>
+              </tr>
+              <tr style="font-size: 15px; font-weight: 700;">
+                <td style="padding: 16px 0; color: var(--primary);">Herança líquida</td>
+                <td style="padding: 16px 0; text-align: right; color: var(--primary);" id="tabela_heranca_liquida">R$ 0,00</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- TABELA DE CONSEQUÊNCIAS (PÓS ESTRATÉGIA 1) -->
+        <div style="margin-bottom: 35px; background: #fcfdfe; padding: 25px; border-radius: 16px; border: 1px solid #f0f4f9; box-shadow: 0 4px 20px rgba(0,0,0,0.02);">
+          <h4 style="color: #E53935; margin: 0 0 15px 0; font-size: 16px; font-weight: 700; border-bottom: 2px solid #E53935; padding-bottom: 8px;">Consequências</h4>
+          <table style="width: 100%; border-collapse: collapse; font-family: 'Outfit', sans-serif; font-size: 14px;">
+            <thead>
+              <tr style="border-bottom: 1.5px solid #e1e8f0; text-align: left;">
+                <th style="padding: 10px 0; color: var(--text-muted); font-weight: 600; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">Possíveis impactos</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr style="border-bottom: 1px solid #f0f4f9;" id="impacto_venda_imoveis">
+                <td style="padding: 12px 0; color: var(--text-main); font-weight: 500;">Venda de imóveis</td>
+              </tr>
+              <tr style="border-bottom: 1px solid #f0f4f9;" id="impacto_venda_investimentos">
+                <td style="padding: 12px 0; color: var(--text-main); font-weight: 500;">Venda de investimentos</td>
+              </tr>
+              <tr style="border-bottom: 1px solid #f0f4f9;" id="impacto_venda_empresas">
+                <td style="padding: 12px 0; color: var(--text-main); font-weight: 500;">Venda de participação societária</td>
+              </tr>
+              <tr style="border-bottom: 1px solid #f0f4f9;">
+                <td style="padding: 12px 0; color: var(--text-main); font-weight: 500;">Liquidação de ativos em momento desfavorável</td>
+              </tr>
+              <tr style="border-bottom: 1px solid #f0f4f9;">
+                <td style="padding: 12px 0; color: var(--text-main); font-weight: 500;">Possível perda de valor patrimonial</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- TABELA ESTRATÉGIA 2: DOAÇÃO DENTRO DA ISENÇÃO -->
+        <div style="margin-bottom: 35px; background: #fcfdfe; padding: 25px; border-radius: 16px; border: 1px solid #f0f4f9; box-shadow: 0 4px 20px rgba(0,0,0,0.02);">
+          <h4 style="color: var(--primary); margin: 0 0 15px 0; font-size: 16px; font-weight: 700; border-bottom: 2px solid var(--primary); padding-bottom: 8px;">Estratégia 2 | Doação dentro da isenção</h4>
+          <table style="width: 100%; border-collapse: collapse; font-family: 'Outfit', sans-serif; font-size: 14px;">
+            <thead>
+              <tr style="border-bottom: 1.5px solid #e1e8f0; text-align: left;">
+                <th style="padding: 10px 0; color: var(--text-muted); font-weight: 600; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">Informação</th>
+                <th style="padding: 10px 0; text-align: right; color: var(--text-muted); font-weight: 600; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">Resultado</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr style="border-bottom: 1px solid #f0f4f9;">
+                <td style="padding: 12px 0; color: var(--text-main); font-weight: 500;">Valor necessário</td>
+                <td style="padding: 12px 0; text-align: right; font-weight: 600; color: var(--text-main);" id="estrategia2_valor_necessario">R$ 0,00</td>
+              </tr>
+              <tr style="border-bottom: 1px solid #f0f4f9;">
+                <td style="padding: 12px 0; color: var(--text-main); font-weight: 500;">Limite anual de isenção (hipotético)</td>
+                <td style="padding: 12px 0; text-align: right; font-weight: 600; color: var(--text-main);" id="estrategia2_limite_isencao">R$ 100.000,00</td>
+              </tr>
+              <tr>
+                <td style="padding: 12px 0; color: var(--text-main); font-weight: 500;">Tempo estimado para concluir a doação</td>
+                <td style="padding: 12px 0; text-align: right; font-weight: 600; color: var(--text-main);" id="estrategia2_tempo_estimado">—</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- TABELA DE RISCOS DA ESTRATÉGIA 2 -->
+        <div style="margin-bottom: 35px; background: #fcfdfe; padding: 25px; border-radius: 16px; border: 1px solid #f0f4f9; box-shadow: 0 4px 20px rgba(0,0,0,0.02);">
+          <h4 style="color: #E53935; margin: 0 0 15px 0; font-size: 16px; font-weight: 700; border-bottom: 2px solid #E53935; padding-bottom: 8px;">Riscos</h4>
+          <table style="width: 100%; border-collapse: collapse; font-family: 'Outfit', sans-serif; font-size: 14px;">
+            <thead>
+              <tr style="border-bottom: 1.5px solid #e1e8f0; text-align: left;">
+                <th style="padding: 10px 0; color: var(--text-muted); font-weight: 600; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">Risco</th>
+                <th style="padding: 10px 0; text-align: right; color: var(--text-muted); font-weight: 600; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">Impacto</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr style="border-bottom: 1px solid #f0f4f9;">
+                <td style="padding: 12px 0; color: var(--text-main); font-weight: 500;">Divórcio do beneficiário</td>
+                <td style="padding: 12px 0; text-align: right; font-weight: 600; color: #E53935;">Alto</td>
+              </tr>
+              <tr style="border-bottom: 1px solid #f0f4f9;">
+                <td style="padding: 12px 0; color: var(--text-main); font-weight: 500;">Penhora por credores</td>
+                <td style="padding: 12px 0; text-align: right; font-weight: 600; color: #FF8F00;">Médio</td>
+              </tr>
+              <tr style="border-bottom: 1px solid #f0f4f9;">
+                <td style="padding: 12px 0; color: var(--text-main); font-weight: 500;">Falecimento do beneficiário</td>
+                <td style="padding: 12px 0; text-align: right; font-weight: 600; color: #E53935;">Alto</td>
+              </tr>
+              <tr style="border-bottom: 1px solid #f0f4f9;">
+                <td style="padding: 12px 0; color: var(--text-main); font-weight: 500;">Perda do controle patrimonial</td>
+                <td style="padding: 12px 0; text-align: right; font-weight: 600; color: #E53935;">Alto</td>
+              </tr>
+              <tr style="border-bottom: 1px solid #f0f4f9;">
+                <td style="padding: 12px 0; color: var(--text-main); font-weight: 500;">Mudança na legislação</td>
+                <td style="padding: 12px 0; text-align: right; font-weight: 600; color: #FF8F00;">Médio</td>
+              </tr>
+              <tr style="border-bottom: 1px solid #f0f4f9;">
+                <td style="padding: 12px 0; color: var(--text-main); font-weight: 500;">Necessidade futura do patrimônio</td>
+                <td style="padding: 12px 0; text-align: right; font-weight: 600; color: #E53935;">Alto</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="footer-relatorio">
+        Página 3 | Relatório de Planejamento Pace
+      </div>
+    </div>
+
+    <!-- PÁGINA 4: DETALHAMENTO DA SUCESSÃO -->
     <div class="pagina nova-pagina">
       <div class="header-relatorio">
         <div class="logo-relatorio">Pace Capital</div>
         <div class="tag-relatorio">Detalhamento da Sucessão</div>
       </div>
 
-      <!-- HERANÇA -->
       <div style="margin-bottom: 40px; margin-top: 20px;">
         <h3 style="color: var(--primary); margin-top: 0; font-size: 20px; text-align: center; margin-bottom: 20px;">
           Divisão Estimada do Patrimônio (Herança)</h3>
@@ -328,11 +463,11 @@
       </div>
 
       <div class="footer-relatorio">
-        Página 3 | Relatório de Planejamento Pace
+        Página 4 | Relatório de Planejamento Pace
       </div>
     </div>
 
-    <!-- PÁGINA 4: DISTRIBUIÇÃO DE ATIVOS -->
+    <!-- PÁGINA 5: DISTRIBUIÇÃO DE ATIVOS -->
     <div class="pagina nova-pagina">
       <div class="header-relatorio">
         <div class="logo-relatorio">Pace Capital</div>
@@ -361,7 +496,7 @@
       </div>
 
       <div class="footer-relatorio">
-        Página 4 | Relatório de Planejamento Pace
+        Página 5 | Relatório de Planejamento Pace
       </div>
     </div>
 

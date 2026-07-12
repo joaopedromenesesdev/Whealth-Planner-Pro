@@ -1,32 +1,16 @@
-// db.js - Abstração de Acesso a Dados (Supabase + LocalStorage Fallback)
+// db.js - Abstração de Acesso a Dados (Supabase Primário + LocalStorage Backup)
+// Fonte única da verdade: Supabase. LocalStorage é usado como backup offline.
 
-const DB_STORAGE_KEY = "pace_relatorios";
-
-// Auxiliar para obter a chave do LocalStorage específica para o usuário logado
-async function getStorageKey() {
-  if (window.supabaseClient) {
-    try {
-      const { data: { session } } = await window.supabaseClient.auth.getSession();
-      if (session?.user?.id) {
-        return `${DB_STORAGE_KEY}_${session.user.id}`;
-      }
-    } catch (e) {
-      console.error("Erro ao obter ID do usuário para o storage key:", e);
-    }
-  }
-  return DB_STORAGE_KEY;
-}
+// ─── Auxiliares ──────────────────────────────────────────────────────────────
 
 // Aguarda a sessão Supabase ser restaurada (resolve race condition no carregamento inicial)
 function aguardarSessao(timeoutMs = 3000) {
   return new Promise((resolve) => {
     if (!window.supabaseClient) return resolve(null);
 
-    // Tenta obter a sessão já disponível
     window.supabaseClient.auth.getSession().then(({ data: { session } }) => {
       if (session) return resolve(session);
 
-      // Ainda não disponível — escuta o evento INITIAL_SESSION
       const timer = setTimeout(() => {
         sub?.data?.subscription?.unsubscribe();
         resolve(null);
@@ -43,22 +27,77 @@ function aguardarSessao(timeoutMs = 3000) {
   });
 }
 
-// Verifica se um ID é um UUID válido
+// Verifica se um ID é um UUID válido (do Supabase)
 function isUUID(str) {
   if (!str) return false;
   const pattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
   return pattern.test(str);
 }
 
-// Carregar todos os relatórios
+// Mapeia linha do Supabase para objeto padronizado
+function _mapearLinhaSupabase(item) {
+  return {
+    id: item.id,
+    nomeCliente: item.nome_cliente,
+    nomeAssessor: item.nome_assessor,
+    totalPatrimonio: Number(item.total_patrimonio),
+    prejuizoTributario: Number(item.prejuizo_tributario),
+    dataCriacao: item.data_criacao,
+    dataReuniao: item.dados_completos?.data_reuniao || new Date(item.data_criacao).toLocaleDateString("pt-BR"),
+    dadosSessao: item.dados_completos
+  };
+}
+
+// Funções auxiliares para backup local em LocalStorage (Offline / Fallback)
+function _obterBackupLocal(userId) {
+  if (!userId) return [];
+  try {
+    const key = `relatorios_backup_${userId}`;
+    const data = localStorage.getItem(key);
+    return data ? JSON.parse(data) : [];
+  } catch (e) {
+    console.error("[_obterBackupLocal] Erro ao carregar backup local:", e);
+    return [];
+  }
+}
+
+function _salvarBackupLocal(userId, relatorios) {
+  if (!userId) return;
+  try {
+    const key = `relatorios_backup_${userId}`;
+    localStorage.setItem(key, JSON.stringify(relatorios));
+  } catch (e) {
+    console.error("[_salvarBackupLocal] Erro ao salvar backup local:", e);
+  }
+}
+
+function _salvarOuAtualizarItemBackup(userId, relatorio) {
+  if (!userId) return;
+  const list = _obterBackupLocal(userId);
+  const index = list.findIndex(item => item.id === relatorio.id);
+  if (index !== -1) {
+    list[index] = relatorio;
+  } else {
+    list.unshift(relatorio);
+  }
+  _salvarBackupLocal(userId, list);
+}
+
+function _removerItemBackup(userId, id) {
+  if (!userId) return;
+  const list = _obterBackupLocal(userId);
+  const filtrados = list.filter(item => item.id !== id);
+  _salvarBackupLocal(userId, filtrados);
+}
+
+// ─── CRUD Principal ──────────────────────────────────────────────────────────
+
+// Carregar todos os relatórios do Supabase (com fallback para LocalStorage)
 async function dbObterRelatorios() {
   if (window.supabaseClient) {
     try {
-      // Aguarda a sessão estar restaurada antes de consultar (evita race condition)
       const session = await aguardarSessao();
-      if (!session) {
-        console.warn("Sessão não disponível, usando LocalStorage.");
-      } else {
+      if (session) {
         const { data, error } = await window.supabaseClient
           .from('relatorios')
           .select('*')
@@ -67,137 +106,209 @@ async function dbObterRelatorios() {
 
         if (error) throw error;
 
-        return data.map(item => ({
-          id: item.id,
-          nomeCliente: item.nome_cliente,
-          nomeAssessor: item.nome_assessor,
-          totalPatrimonio: Number(item.total_patrimonio),
-          prejuizoTributario: Number(item.prejuizo_tributario),
-          dataCriacao: item.data_criacao,
-          dataReuniao: item.dados_completos?.data_reuniao || new Date(item.data_criacao).toLocaleDateString("pt-BR"),
-          dadosSessao: item.dados_completos
-        }));
+        const mapeados = data.map(_mapearLinhaSupabase);
+        // Atualiza o backup local com os dados mais recentes do servidor
+        _salvarBackupLocal(session.user.id, mapeados);
+        return mapeados;
+      } else {
+        console.warn("[dbObterRelatorios] Sessão não disponível.");
       }
     } catch (e) {
-      console.error("Erro ao carregar dados do Supabase. Usando LocalStorage alternativo.", e);
+      console.error("[dbObterRelatorios] Erro ao obter relatórios do Supabase:", e);
+      // Fallback para backup local
+      const session = await aguardarSessao();
+      const userId = session?.user?.id;
+      if (userId) {
+        console.warn("[dbObterRelatorios] Carregando relatórios do backup local (offline).");
+        return _obterBackupLocal(userId);
+      }
     }
   }
 
-  // Fallback LocalStorage
-  try {
-    const key = await getStorageKey();
-    return JSON.parse(localStorage.getItem(key)) || [];
-  } catch (e) {
-    console.error("Erro ao ler relatórios locais:", e);
-    return [];
-  }
+  return [];
 }
 
-// Salvar/Atualizar um relatório
+// Salvar/Atualizar um relatório no Supabase (com sincronização local)
 async function dbSalvarRelatorio(relatorio) {
+  let idFinal = relatorio.id;
+
   if (window.supabaseClient) {
     try {
-      // Aguarda a sessão estar restaurada antes de salvar (evita race condition)
       const session = await aguardarSessao();
       const userId = session?.user?.id;
+
+      if (!userId) {
+        throw new Error("Usuário não autenticado.");
+      }
 
       const payload = {
         nome_cliente: relatorio.nomeCliente,
         nome_assessor: relatorio.nomeAssessor,
         total_patrimonio: relatorio.totalPatrimonio,
         prejuizo_tributario: relatorio.prejuizoTributario,
-        dados_completos: relatorio.dadosSessao
+        dados_completos: relatorio.dadosSessao,
+        user_id: userId
       };
 
-      if (userId) {
-        payload.user_id = userId;
-      }
-
       if (isUUID(relatorio.id)) {
+        // Atualiza registro existente no Supabase
         payload.id = relatorio.id;
         const { error } = await window.supabaseClient
           .from('relatorios')
           .upsert(payload);
         if (error) throw error;
-        console.log("Relatório atualizado com sucesso no Supabase!");
+        idFinal = relatorio.id;
+        console.log("[dbSalvarRelatorio] Relatório atualizado no Supabase:", idFinal);
       } else {
-        // Novo registro, insere e pega o ID gerado pelo banco
+        // Novo registro: insere e obtém o UUID gerado pelo banco
         const { data, error } = await window.supabaseClient
           .from('relatorios')
           .insert([payload])
           .select();
-
         if (error) throw error;
         if (data && data[0]) {
-          // Atualiza o ID na sessão atual para que os próximos salvamentos atualizem o mesmo registro
-          sessionStorage.setItem("current_report_id", data[0].id);
-          console.log("Novo relatório inserido no Supabase com ID:", data[0].id);
+          idFinal = data[0].id;
+          // Atualiza o ID da sessão com o UUID real do Supabase
+          sessionStorage.setItem("current_report_id", idFinal);
+          console.log("[dbSalvarRelatorio] Novo relatório inserido no Supabase:", idFinal);
         }
       }
-      return;
+
+      // Atualiza localmente no backup
+      const relatorioAtualizado = { ...relatorio, id: idFinal };
+      _salvarOuAtualizarItemBackup(userId, relatorioAtualizado);
+
     } catch (e) {
-      console.error("Erro ao salvar no Supabase. Usando LocalStorage alternativo.", e);
+      console.error("[dbSalvarRelatorio] Erro no Supabase:", e);
+      // Se falhou no Supabase, salva no backup local com o ID atual (pode ser temporário)
+      const session = await aguardarSessao();
+      const userId = session?.user?.id;
+      if (userId) {
+        console.warn("[dbSalvarRelatorio] Salvando no backup local devido a falha no Supabase.");
+        _salvarOuAtualizarItemBackup(userId, relatorio);
+      }
+      throw e;
     }
-  }
-
-  // Fallback LocalStorage
-  let relatorios = [];
-  const key = await getStorageKey();
-  try {
-    relatorios = JSON.parse(localStorage.getItem(key)) || [];
-  } catch (e) {
-    relatorios = [];
-  }
-
-  const index = relatorios.findIndex(r => r.id === relatorio.id);
-  if (index !== -1) {
-    relatorio.dataCriacao = relatorios[index].dataCriacao || relatorio.dataCriacao;
-    relatorios[index] = relatorio;
   } else {
-    relatorios.push(relatorio);
+    console.error("[dbSalvarRelatorio] Cliente Supabase não configurado.");
   }
 
-  localStorage.setItem(key, JSON.stringify(relatorios));
-  console.log("Relatório salvo localmente (LocalStorage).");
+  return idFinal;
 }
 
-// Excluir um relatório
+// Excluir um relatório do Supabase (e do cache local)
 async function dbExcluirRelatorio(id) {
   if (window.supabaseClient) {
     try {
-      if (isUUID(id)) {
-        const session = await aguardarSessao();
-        const userId = session?.user?.id;
+      const session = await aguardarSessao();
+      const userId = session?.user?.id;
 
-        let query = window.supabaseClient
+      if (!userId) {
+        throw new Error("Usuário não autenticado.");
+      }
+
+      // Remove do backup local
+      _removerItemBackup(userId, id);
+
+      if (isUUID(id)) {
+        const { error } = await window.supabaseClient
           .from('relatorios')
           .delete()
-          .eq('id', id);
+          .eq('id', id)
+          .eq('user_id', userId);
 
-        if (userId) {
-          query = query.eq('user_id', userId);
-        }
-
-        const { error } = await query;
         if (error) throw error;
-        console.log("Relatório excluído com sucesso do Supabase!");
-        return;
+        console.log("[dbExcluirRelatorio] Relatório excluído do Supabase:", id);
       }
     } catch (e) {
-      console.error("Erro ao excluir do Supabase. Usando LocalStorage alternativo.", e);
+      console.error("[dbExcluirRelatorio] Erro ao excluir do Supabase:", e);
+      throw e;
     }
   }
+}
 
-  // Fallback LocalStorage
-  let relatorios = [];
-  const key = await getStorageKey();
-  try {
-    relatorios = JSON.parse(localStorage.getItem(key)) || [];
-  } catch (e) {
-    relatorios = [];
+// ─── Auto-Save com Debounce ──────────────────────────────────────────────────
+// Chamado pelas páginas do simulador a cada alteração relevante.
+// Usa debounce de 1,5s para não sobrecarregar o banco com requisições durante digitação.
+
+let _autoSaveTimer = null;
+
+function dbAutoSalvar() {
+  // Não salva se não houver dados mínimos (evita salvar relatórios vazios)
+  const familiaStr = sessionStorage.getItem("familia");
+  const totalPat = Number(sessionStorage.getItem("total_patrimonio")) || 0;
+  if (!familiaStr && totalPat === 0) return;
+
+  clearTimeout(_autoSaveTimer);
+  _autoSaveTimer = setTimeout(async () => {
+    await dbAutoSalvarExecutar();
+  }, 1500);
+}
+
+// Executa o salvamento imediatamente (sem debounce). Usado antes de gerar o PDF.
+async function dbAutoSalvarExecutar() {
+  const familiaStr = sessionStorage.getItem("familia");
+  if (!familiaStr) {
+    console.warn("[dbAutoSalvar] Nenhum dado de família — relatório não será salvo.");
+    return;
   }
 
-  const atualizados = relatorios.filter(r => r.id !== id);
-  localStorage.setItem(key, JSON.stringify(atualizados));
-  console.log("Relatório excluído localmente (LocalStorage).");
+  const familia = JSON.parse(familiaStr);
+  const nomeCliente = familia.nome || "Cliente";
+  const nomeAssessor = sessionStorage.getItem("nome_assessor") || "Assessor";
+  const dataReuniao = sessionStorage.getItem("data_reuniao") || new Date().toLocaleDateString("pt-BR");
+  const totalPatrimonio = Number(sessionStorage.getItem("total_patrimonio")) || 0;
+
+  let prejuizoTributario = 0;
+  const prejuizoFinalStr = sessionStorage.getItem("prejuizo_final");
+  if (prejuizoFinalStr) {
+    try {
+      const finalObj = JSON.parse(prejuizoFinalStr);
+      prejuizoTributario = finalObj.prejuizoAtual || 0;
+    } catch (e) { /* ignora */ }
+  }
+
+  // Identificador da simulação (reutiliza ou cria)
+  let reportId = sessionStorage.getItem("current_report_id");
+  if (!reportId) {
+    reportId = "tmp_" + Date.now(); // ID temporário até salvar no Supabase
+    sessionStorage.setItem("current_report_id", reportId);
+  }
+
+  // Consolida todos os dados da sessão
+  const sessionData = {};
+  const keysToSave = [
+    "patrimonio_dados", "total_patrimonio", "nome_assessor", "data_reuniao",
+    "familia", "evolucao_dados", "evolucao_inputs", "mercado_premissas",
+    "tributario_inputs", "prejuizo_final", "partilha_dados", "segunda_morte_dados",
+    "current_report_id"
+  ];
+  keysToSave.forEach(key => {
+    const val = sessionStorage.getItem(key);
+    if (val) {
+      try { sessionData[key] = JSON.parse(val); }
+      catch (e) { sessionData[key] = val; }
+    }
+  });
+
+  const relatorio = {
+    id: reportId,
+    nomeCliente,
+    nomeAssessor,
+    dataReuniao,
+    totalPatrimonio,
+    prejuizoTributario,
+    dataCriacao: new Date().toISOString(),
+    dadosSessao: sessionData
+  };
+
+  try {
+    const novoId = await dbSalvarRelatorio(relatorio);
+    // Atualiza o ID na sessão caso tenha sido promovido a UUID pelo Supabase
+    if (novoId && novoId !== reportId) {
+      sessionStorage.setItem("current_report_id", novoId);
+    }
+  } catch (e) {
+    console.error("[dbAutoSalvar] Falha ao salvar relatório:", e);
+  }
 }

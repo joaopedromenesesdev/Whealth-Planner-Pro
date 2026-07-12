@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿let graficoGeral, graficoAplicacoes, graficoImoveis, graficoEmpresas;
+﻿﻿﻿﻿﻿﻿let graficoGeral, graficoAplicacoes, graficoImoveis, graficoEmpresas;
 Chart.register(ChartDataLabels);
 
 // =========================
@@ -566,9 +566,57 @@ function calcularPrejuizo() {
   if (elPdfProj) elPdfProj.innerText = "R$ " + prejuizoProjetado.toLocaleString("pt-BR", { maximumFractionDigits: 0 });
   if (elPdfTotalProj) elPdfTotalProj.innerText = "R$ " + totalProjetado.toLocaleString("pt-BR", { maximumFractionDigits: 0 });
 
+  // Atualiza a tabela de Herança Líquida (Estratégia 1) no relatório PDF
+  const elTabelaPatInicial = document.getElementById("tabela_patrimonio_inicial");
+  const elTabelaCustos = document.getElementById("tabela_custos_sucessao");
+  const elTabelaHerancaLiquida = document.getElementById("tabela_heranca_liquida");
+
+  if (elTabelaPatInicial) elTabelaPatInicial.innerText = "R$ " + totalAtual.toLocaleString("pt-BR", { maximumFractionDigits: 0 });
+  if (elTabelaCustos) elTabelaCustos.innerText = "R$ " + prejuizoAtual.toLocaleString("pt-BR", { maximumFractionDigits: 0 });
+  if (elTabelaHerancaLiquida) {
+    const herancaLiquida = Math.max(0, totalAtual - prejuizoAtual);
+    elTabelaHerancaLiquida.innerText = "R$ " + herancaLiquida.toLocaleString("pt-BR", { maximumFractionDigits: 0 });
+  }
+
+  // Controla exibição dos impactos no PDF de acordo com o patrimônio do cliente
+  const elImoveis = document.getElementById("impacto_venda_imoveis");
+  const elInvestimentos = document.getElementById("impacto_venda_investimentos");
+  const elEmpresas = document.getElementById("impacto_venda_empresas");
+
+  const temImoveis = (parseValor(dadosPatrimonio.apt) + parseValor(dadosPatrimonio.casa) + parseValor(dadosPatrimonio.terr) + parseValor(dadosPatrimonio.galp)) > 0;
+  const temInvestimentos = (parseValor(dadosPatrimonio.rf) + parseValor(dadosPatrimonio.rv) + parseValor(dadosPatrimonio.inter) + parseValor(dadosPatrimonio.offshore)) > 0;
+  let temEmpresas = false;
+  if (dadosPatrimonio.empresas && dadosPatrimonio.empresas.length > 0) {
+    temEmpresas = dadosPatrimonio.empresas.some(e => parseValor(e.valor) > 0);
+  }
+
+  if (elImoveis) elImoveis.style.display = temImoveis ? "table-row" : "none";
+  if (elInvestimentos) elInvestimentos.style.display = temInvestimentos ? "table-row" : "none";
+  if (elEmpresas) elEmpresas.style.display = temEmpresas ? "table-row" : "none";
+
+  // Preenche tabela da Estratégia 2: Doação dentro da isenção
+  const LIMITE_ISENCAO_ANUAL = 100000; // R$ 100.000 hipotético
+  const elE2Valor = document.getElementById("estrategia2_valor_necessario");
+  const elE2Limite = document.getElementById("estrategia2_limite_isencao");
+  const elE2Tempo = document.getElementById("estrategia2_tempo_estimado");
+
+  if (elE2Valor) elE2Valor.innerText = "R$ " + prejuizoAtual.toLocaleString("pt-BR", { maximumFractionDigits: 0 });
+  if (elE2Limite) elE2Limite.innerText = "R$ " + LIMITE_ISENCAO_ANUAL.toLocaleString("pt-BR", { maximumFractionDigits: 0 });
+  if (elE2Tempo) {
+    if (prejuizoAtual > 0) {
+      const anosEstimados = Math.ceil(prejuizoAtual / LIMITE_ISENCAO_ANUAL);
+      elE2Tempo.innerText = `Aproximadamente ${anosEstimados} ${anosEstimados === 1 ? "ano" : "anos"}`;
+    } else {
+      elE2Tempo.innerText = "—";
+    }
+  }
+
   gerarNarrativaIA(totalAtual, prejuizoAtual, regime);
   calcularPartilha(totalAtual, regime);
   calcularHolding(prejuizoAtual);
+
+  // Auto-save: persiste progressivamente no Supabase com debounce
+  if (typeof dbAutoSalvar === "function") dbAutoSalvar();
 }
 
 // =========================
@@ -1171,7 +1219,11 @@ async function gerarPDF() {
   btn.disabled = true;
 
   // Garante que o relatório esteja salvo no histórico antes de gerar o PDF
-  await salvarRelatorioNoHistorico();
+  if (typeof dbAutoSalvarExecutar === "function") {
+    await dbAutoSalvarExecutar();
+  } else {
+    await salvarRelatorioNoHistorico();
+  }
   try {
     document.body.classList.add("pdf-exporting");
 

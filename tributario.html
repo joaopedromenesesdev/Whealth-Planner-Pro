@@ -33,494 +33,511 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
 </head>
 
-  <!-- NAVBAR -->
-  <div class="navbar">
-    <div class="logo">Pace<span>Capital</span></div>
+<!-- NAVBAR -->
+<div class="navbar">
+  <div class="logo">Pace<span>Capital</span></div>
 
-    <div class="menu">
-      <a href="index.html">Dashboard</a>
-      <a href="patrimonio.html">Patrimônio</a>
-      <a href="familiar.html">Estrutura Familiar</a>
-      <a href="evolucao.html">Evolução Patrimonial</a>
-      <a href="tributario.html" class="active">Prejuízo Tributário</a>
-      <a href="javascript:void(0)" onclick="limparTudo()" class="btn-limpar">Limpar Tudo</a>
+  <div class="menu">
+    <a href="index.html">Dashboard</a>
+    <a href="patrimonio.html">Patrimônio</a>
+    <a href="familiar.html">Estrutura Familiar</a>
+    <a href="evolucao.html">Evolução Patrimonial</a>
+    <a href="tributario.html" class="active">Prejuízo Tributário</a>
+    <a href="javascript:void(0)" onclick="limparTudo()" class="btn-limpar">Limpar Tudo</a>
+  </div>
+</div>
+<div class="stepper-wrapper reveal">
+  <div class="stepper-item completed">
+    <div class="step-counter">1</div>
+    <div class="step-name">Patrimônio</div>
+  </div>
+  <div class="stepper-item completed">
+    <div class="step-counter">2</div>
+    <div class="step-name">Familiar</div>
+  </div>
+  <div class="stepper-item completed">
+    <div class="step-counter">3</div>
+    <div class="step-name">Evolução</div>
+  </div>
+  <div class="stepper-item active">
+    <div class="step-counter">4</div>
+    <div class="step-name">Tributário</div>
+  </div>
+</div>
+
+<br>
+
+<!-- SIMULADOR DE PREJUÍZO TRIBUTÁRIO PREMIUM -->
+<div class="tributario-dashboard">
+
+  <!-- LADO ESQUERDO: CONFIGURAÇÃO -->
+  <aside class="tributario-sidebar">
+    <div class="card-glass reveal delay-1">
+      <h3><i class="icon-settings"></i> Configuração</h3>
+
+      <div class="resumo-data">
+        <div class="info-row">
+          <span>Patrimônio Atual</span>
+          <strong id="resumo_atual">R$ 0,00</strong>
+        </div>
+        <div class="info-row">
+          <span>Previdência Atual</span>
+          <strong id="resumo_prev_atual">R$ 0,00</strong>
+        </div>
+        <div class="info-row">
+          <span>Patrimônio Projetado</span>
+          <strong id="resumo_projetado">R$ 0,00</strong>
+        </div>
+        <div class="info-row">
+          <span>Previdência Projetada</span>
+          <strong id="resumo_prev_projetada">R$ 0,00</strong>
+        </div>
+        <div class="regime-casamento-block"
+          style="display: flex; flex-direction: column; gap: 4px; margin-top: 5px; border-top: 1px solid rgba(0,0,0,0.05); padding-top: 10px;">
+          <span style="font-size: 13px; color: var(--text-muted);">Regime de Bens</span>
+          <strong id="resumo_regime" style="font-size: 14px; color: var(--text-main); font-weight: 600;">Não
+            informado</strong>
+        </div>
+      </div>
+
+      <hr class="separator">
+
+      <h4>Localização e Alíquotas</h4>
+      <div class="input-group">
+        <label>Estado (UF do Patrimônio)</label>
+        <select id="uf_itcmd" onchange="atualizarITCMD()"
+          style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid rgba(11, 83, 184, 0.2); background: rgba(255, 255, 255, 0.8); margin-bottom: 10px; font-family: 'Outfit'; outline: none;">
+          <option value="4" selected>São Paulo (SP) - 4%</option>
+          <option value="8">Rio de Janeiro (RJ) - 8%</option>
+          <option value="5">Minas Gerais (MG) - 5%</option>
+          <option value="4">Paraná (PR) - 4%</option>
+          <option value="8">Bahia (BA) - 8%</option>
+          <option value="8">Goiás (GO) - 8%</option>
+          <option value="8">Santa Catarina (SC) - 8%</option>
+          <option value="outro">Outro Estado (Manual)</option>
+        </select>
+      </div>
+
+      <div class="input-group">
+        <label>ITCMD (Imposto)</label>
+        <div class="input-with-suffix">
+          <input type="number" id="taxa_itcmd" value="4" step="0.1">
+          <span>%</span>
+        </div>
+      </div>
+
+      <div class="input-group">
+        <label>Honorários</label>
+        <div class="input-with-suffix">
+          <input type="number" id="taxa_honorarios" value="6" step="0.1">
+          <span>%</span>
+        </div>
+      </div>
+
+      <div class="input-group">
+        <label>Taxas e Custas</label>
+        <div class="input-with-suffix">
+          <input type="number" id="taxa_custas" value="1" step="0.1">
+          <span>%</span>
+        </div>
+      </div>
+
+    </div>
+  </aside>
+
+  <!-- LADO DIREITO: IMPACTO VISUAL -->
+  <main class="tributario-main">
+    <div class="impacto-container">
+
+      <div class="header-main">
+        <h2>Análise de Prejuízo Tributário</h2>
+        <p>Comparativo do prejuízo tributário estimado para o cenário atual vs. projetado.</p>
+      </div>
+
+      <div id="alerta_liquidez"
+        style="display: none; background: rgba(229, 57, 53, 0.05); border-left: 4px solid #E53935; padding: 15px; border-radius: 8px; margin-bottom: 25px;">
+        <h4 style="color: #E53935; margin: 0 0 5px 0; font-size: 16px;">⚠️ Risco Crítico de Liquidez</h4>
+        <p style="margin: 0; font-size: 13.5px; color: #444; line-height: 1.5;" id="alerta_liquidez_texto"></p>
+      </div>
+
+      <div class="comparativo-cards">
+        <!-- CARD HOJE -->
+        <div class="card-impacto card-hoje reveal delay-2">
+          <div class="label-periodo">Cenário Atual</div>
+          <div class="valor-principal" id="prejuizo_atual_valor">R$ 0,00</div>
+          <div class="percentual-badge" id="prejuizo_atual_pct">0% do total</div>
+          <div class="sub-info">Base tributável: <span id="base_atual">R$ 0,00</span></div>
+        </div>
+
+        <!-- SETA OU DIVISOR -->
+        <div class="divisor-impacto">
+          <i class="arrow-icon"></i>
+        </div>
+
+        <!-- CARD FUTURO -->
+        <div class="card-impacto card-futuro reveal delay-3">
+          <div class="label-periodo">Projeção Futura</div>
+          <div class="valor-principal" id="prejuizo_projetado_valor">R$ 0,00</div>
+          <div class="percentual-badge secondary" id="prejuizo_projetado_pct">0% do total</div>
+          <div class="sub-info">Base tributável: <span id="base_projetada">R$ 0,00</span></div>
+        </div>
+      </div>
+
+      <div class="footer-note">
+        <p><i class="icon-info"></i> O cálculo considera a dedução da Previdência Privada e o impacto do Regime de
+          Bens selecionado.</p>
+      </div>
+
+      <!-- SEÇÃO DE REDUÇÃO DO IMPACTO TRIBUTÁRIO -->
+      <div class="reducao-container">
+        <hr class="separator" style="margin: 25px 0;">
+        <h3 class="reducao-title">Estratégias de Preservação Patrimonial</h3>
+        <p class="reducao-intro">A partir de agora vamos te apresentar formas de redução desse impacto tributário.</p>
+
+        <!-- OPÇÃO 1: Doação dentro da isenção -->
+        <div class="reducao-card">
+          <div class="reducao-col">
+            <label for="input_doacao_vida" class="input-title">1 - Doação de ativos financeiros em vida</label>
+            <div class="input-wrapper">
+              <span class="currency-symbol">R$</span>
+              <input type="text" id="input_doacao_vida" placeholder="Digite o valor anual" autocomplete="off">
+            </div>
+            <span class="exemption-limit">Limite isento ao ITCMD: R$ 96.050,00 / ano</span>
+          </div>
+
+          <div class="reducao-col results-col">
+            <div class="results-title">Tempo para transmitir o valor correspondente:</div>
+            <div class="results-values">
+              <div class="result-item">
+                <span class="result-label">Cenário Atual:</span>
+                <span class="result-badge" id="tempo_atual_doacao">—</span>
+              </div>
+              <div class="result-item">
+                <span class="result-label">Projeção Futura:</span>
+                <span class="result-badge" id="tempo_projetado_doacao">—</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- OPÇÃO 2: Doação à vista com ITCMD -->
+        <div class="reducao-card reducao-card-avista">
+          <div class="reducao-col">
+            <label for="input_doacao_avista" class="input-title">2 - Doação à vista (com incidência de ITCMD)</label>
+            <p class="avista-descricao">
+              A partir de <strong>R$ 96.050,00</strong>, o ITCMD incide sobre o <strong>valor total</strong> da doação.
+            </p>
+            <div class="input-wrapper">
+              <span class="currency-symbol">R$</span>
+              <input type="text" id="input_doacao_avista" placeholder="Digite o valor a doar à vista"
+                autocomplete="off">
+            </div>
+          </div>
+
+          <div class="reducao-col results-col">
+            <div class="results-title">Custo da doação à vista:</div>
+            <div class="results-values">
+              <div class="result-item">
+                <span class="result-label">ITCMD sobre a doação:</span>
+                <span class="result-badge result-badge-danger" id="avista_custo_itcmd">—</span>
+              </div>
+              <div class="result-item">
+                <span class="result-label">Total (doação + ITCMD):</span>
+                <span class="result-badge result-badge-total" id="avista_custo_total">—</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- OPÇÃO 3: Previdência -->
+        <div class="reducao-card reducao-card-previdencia">
+          <div class="reducao-col">
+            <label for="input_previdencia" class="input-title">3 - Previdência</label>
+            <p class="previdencia-descricao">
+              Aplicações de até <strong>R$ 600.000,00 / ano</strong> em fundos de previdência são <strong>isentas de
+                IOF</strong>. Acima desse valor, incide <strong>5% de IOF sobre o excedente</strong>.
+            </p>
+            <div class="input-wrapper">
+              <span class="currency-symbol">R$</span>
+              <input type="text" id="input_previdencia" placeholder="Digite o valor aplicado em previdência"
+                autocomplete="off">
+            </div>
+            <span class="exemption-limit">Limite isento de IOF: R$ 600.000,00 / ano</span>
+          </div>
+
+          <div class="reducao-col results-col">
+            <div class="results-title">Impacto Tributário da Previdência:</div>
+            <div class="results-values">
+              <div class="result-item">
+                <span class="result-label">IOF sobre excedente (5%):</span>
+                <span class="result-badge" id="previdencia_imposto">—</span>
+              </div>
+              <div class="result-item">
+                <span class="result-label">Total (aplicação + IOF):</span>
+                <span class="result-badge result-badge-total" id="previdencia_custo_total">—</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- OPÇÃO 4: Seguro Sucessão -->
+        <div class="reducao-card reducao-card-seguro">
+          <div class="reducao-col">
+            <label class="input-title">4 - Seguro Sucessão</label>
+            <p class="seguro-descricao">
+              Garante liquidez imediata para a família arcar com as despesas do inventário sem a necessidade de
+              dilapidar o patrimônio.
+            </p>
+            <div class="seguro-inputs-row" style="display: flex; gap: 15px; margin-bottom: 8px;">
+              <div style="flex: 1;">
+                <label for="input_seguro_idade"
+                  style="font-size: 12px; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Idade
+                  do Segurado</label>
+                <div class="input-wrapper" style="margin-bottom: 0;">
+                  <input type="number" id="input_seguro_idade" placeholder="Ex: 45" min="18" max="100"
+                    autocomplete="off" style="padding-left: 15px;">
+                </div>
+              </div>
+              <div style="flex: 2;">
+                <label for="input_seguro_capital"
+                  style="font-size: 12px; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Capital
+                  Segurado</label>
+                <div class="input-wrapper" style="margin-bottom: 0;">
+                  <span class="currency-symbol">R$</span>
+                  <input type="text" id="input_seguro_capital" placeholder="Digite o capital segurado"
+                    autocomplete="off">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="reducao-col results-col">
+            <div class="results-title">Simulação de Seguro Sucessão:</div>
+            <div class="results-values">
+              <div class="result-item">
+                <span class="result-label">Capital Segurado:</span>
+                <span class="result-badge" id="seguro_resultado_capital">—</span>
+              </div>
+              <div class="result-item">
+                <span class="result-label">Parcela Mensal:</span>
+                <span class="result-badge" id="seguro_resultado_parcela">—</span>
+              </div>
+              <div class="result-item">
+                <span class="result-label">Encerramento dos Aportes:</span>
+                <span class="result-badge" id="seguro_resultado_quitar">—</span>
+              </div>
+              <div class="result-item">
+                <span class="result-label">Economia Estimada:</span>
+                <span class="result-badge result-badge-total" id="seguro_resultado_economia">—</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </main>
+
+</div>
+
+<br>
+
+<!-- BOTÃO -->
+<div style="text-align:center;">
+  <button onclick="abrirPreview()" class="btn-pdf">
+    Visualizar Relatório PDF
+  </button>
+</div>
+
+<br>
+
+<!-- ===== RELATÓRIO ===== -->
+<!-- Container técnico do Relatório (escondido via posição fixa) -->
+<div id="area-relatorio" class="pdf-container" style="position: fixed; top: -9999px; left: 0; z-index: -1;">
+
+  <!-- CAPA -->
+  <div class="pagina capa">
+    <div class="capa-bg-glow"></div>
+    <div class="logo-capa">Pace <span>Capital</span></div>
+
+    <div class="capa-content">
+      <h1>Planejamento Patrimonial</h1>
+      <div class="capa-divider"></div>
+    </div>
+    <div class="capa-footer">
+      <p>Preparado para:</p>
+      <h3 id="nome_cliente_capa">Cliente</h3>
+      <p id="data_pdf"></p>
+    </div>
+  </div><!-- PÁGINA 1: RESUMO E NARRATIVA -->
+  <div class="pagina">
+    <div class="header-relatorio">
+      <div class="logo-relatorio">Pace Capital</div>
+      <div class="tag-relatorio">Resumo Executivo</div>
+    </div>
+
+    <div class="resumo-executivo-caixa">
+      <div class="box-resumo">
+        <div class="resumo-item">
+          <p>Patrimônio Total Analisado</p>
+          <h1 id="total_pdf">R$ 0,00</h1>
+        </div>
+        <div class="resumo-item destaque-prejuizo">
+          <p>Prejuízo Tributário (Cenário Atual)</p>
+          <h2 id="prejuizo_atual_pdf">R$ 0,00</h2>
+        </div>
+        <div class="resumo-item">
+          <p>Patrimônio Projetado (Futuro)</p>
+          <h2 id="total_projetado_pdf">R$ 0,00</h2>
+        </div>
+        <div class="resumo-item destaque-prejuizo">
+          <p>Prejuízo Tributário (Cenário Projetado)</p>
+          <h2 id="prejuizo_projetado_pdf">R$ 0,00</h2>
+        </div>
+      </div>
+    </div>
+
+    <div id="narrativa_ia" class="narrativa-ia">
+      Carregando análise estratégica...
+    </div>
+
+    <div class="footer-relatorio">
+      Página 1 | Relatório de Planejamento Pace
     </div>
   </div>
-  <div class="stepper-wrapper reveal">
-    <div class="stepper-item completed">
-      <div class="step-counter">1</div>
-      <div class="step-name">Patrimônio</div>
+
+  <!-- PÁGINA 2: EVOLUÇÃO, FAMÍLIA E SUCESSÃO -->
+  <div class="pagina nova-pagina">
+    <div class="header-relatorio">
+      <div class="logo-relatorio">Pace Capital</div>
+      <div class="tag-relatorio">Planejamento e Sucessão</div>
     </div>
-    <div class="stepper-item completed">
-      <div class="step-counter">2</div>
-      <div class="step-name">Familiar</div>
+
+    <!-- EVOLUÇÃO -->
+    <div style="margin-bottom: 20px;">
+      <h3 style="color: var(--primary); margin-top: 0; font-size: 18px; text-align: center; margin-bottom: 5px;">
+        Evolução Patrimonial Projetada</h3>
+      <div class="grafico-evolucao-pdf" style="height: 220px; margin-bottom: 15px;">
+        <canvas id="grafico_evolucao"></canvas>
+      </div>
     </div>
-    <div class="stepper-item completed">
-      <div class="step-counter">3</div>
-      <div class="step-name">Evolução</div>
+
+    <!-- ESTRUTURA FAMILIAR -->
+    <div id="estrutura_familiar_container" class="estrutura-familiar-pdf" style="margin: 0 0 20px 0; padding: 10px;">
+      <!-- Injetado via JS -->
     </div>
-    <div class="stepper-item active">
-      <div class="step-counter">4</div>
-      <div class="step-name">Tributário</div>
+
+    <div class="footer-relatorio">
+      Página 2 | Relatório de Planejamento Pace
     </div>
   </div>
 
-  <br>
+  <!-- PÁGINA 3: DETALHAMENTO DA SUCESSÃO -->
+  <div class="pagina nova-pagina">
+    <div class="header-relatorio">
+      <div class="logo-relatorio">Pace Capital</div>
+      <div class="tag-relatorio">Detalhamento da Sucessão</div>
+    </div>
 
-  <!-- SIMULADOR DE PREJUÍZO TRIBUTÁRIO PREMIUM -->
-  <div class="tributario-dashboard">
-
-    <!-- LADO ESQUERDO: CONFIGURAÇÃO -->
-    <aside class="tributario-sidebar">
-      <div class="card-glass reveal delay-1">
-        <h3><i class="icon-settings"></i> Configuração</h3>
-
-        <div class="resumo-data">
-          <div class="info-row">
-            <span>Patrimônio Atual</span>
-            <strong id="resumo_atual">R$ 0,00</strong>
-          </div>
-          <div class="info-row">
-            <span>Previdência Atual</span>
-            <strong id="resumo_prev_atual">R$ 0,00</strong>
-          </div>
-          <div class="info-row">
-            <span>Patrimônio Projetado</span>
-            <strong id="resumo_projetado">R$ 0,00</strong>
-          </div>
-          <div class="info-row">
-            <span>Previdência Projetada</span>
-            <strong id="resumo_prev_projetada">R$ 0,00</strong>
-          </div>
-          <div class="regime-casamento-block" style="display: flex; flex-direction: column; gap: 4px; margin-top: 5px; border-top: 1px solid rgba(0,0,0,0.05); padding-top: 10px;">
-            <span style="font-size: 13px; color: var(--text-muted);">Regime de Bens</span>
-            <strong id="resumo_regime" style="font-size: 14px; color: var(--text-main); font-weight: 600;">Não informado</strong>
-          </div>
+    <div style="margin-bottom: 40px; margin-top: 20px;">
+      <h3 style="color: var(--primary); margin-top: 0; font-size: 20px; text-align: center; margin-bottom: 20px;">
+        Divisão Estimada do Patrimônio (Herança)</h3>
+      <div
+        style="display: flex; align-items: center; justify-content: center; gap: 40px; background: #fcfdfe; padding: 25px; border-radius: 16px; border: 1px solid #f0f4f9; box-shadow: 0 4px 20px rgba(0,0,0,0.02);">
+        <div style="width: 190px; height: 190px; position: relative;">
+          <canvas id="grafico_partilha"></canvas>
         </div>
-
-        <hr class="separator">
-
-        <h4>Localização e Alíquotas</h4>
-        <div class="input-group">
-          <label>Estado (UF do Patrimônio)</label>
-          <select id="uf_itcmd" onchange="atualizarITCMD()"
-            style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid rgba(11, 83, 184, 0.2); background: rgba(255, 255, 255, 0.8); margin-bottom: 10px; font-family: 'Outfit'; outline: none;">
-            <option value="4" selected>São Paulo (SP) - 4%</option>
-            <option value="8">Rio de Janeiro (RJ) - 8%</option>
-            <option value="5">Minas Gerais (MG) - 5%</option>
-            <option value="4">Paraná (PR) - 4%</option>
-            <option value="8">Bahia (BA) - 8%</option>
-            <option value="8">Goiás (GO) - 8%</option>
-            <option value="8">Santa Catarina (SC) - 8%</option>
-            <option value="outro">Outro Estado (Manual)</option>
-          </select>
+        <div id="lista_partilha" style="flex: 1; max-width: 420px; font-size: 14px;">
+          <!-- Preenchido via JS -->
         </div>
-
-        <div class="input-group">
-          <label>ITCMD (Imposto)</label>
-          <div class="input-with-suffix">
-            <input type="number" id="taxa_itcmd" value="4" step="0.1">
-            <span>%</span>
-          </div>
-        </div>
-
-        <div class="input-group">
-          <label>Honorários</label>
-          <div class="input-with-suffix">
-            <input type="number" id="taxa_honorarios" value="6" step="0.1">
-            <span>%</span>
-          </div>
-        </div>
-
-        <div class="input-group">
-          <label>Taxas e Custas</label>
-          <div class="input-with-suffix">
-            <input type="number" id="taxa_custas" value="1" step="0.1">
-            <span>%</span>
-          </div>
-        </div>
-
-      </div>
-    </aside>
-
-    <!-- LADO DIREITO: IMPACTO VISUAL -->
-    <main class="tributario-main">
-      <div class="impacto-container">
-
-        <div class="header-main">
-          <h2>Análise de Prejuízo Tributário</h2>
-          <p>Comparativo do prejuízo tributário estimado para o cenário atual vs. projetado.</p>
-        </div>
-
-        <div id="alerta_liquidez"
-          style="display: none; background: rgba(229, 57, 53, 0.05); border-left: 4px solid #E53935; padding: 15px; border-radius: 8px; margin-bottom: 25px;">
-          <h4 style="color: #E53935; margin: 0 0 5px 0; font-size: 16px;">⚠️ Risco Crítico de Liquidez</h4>
-          <p style="margin: 0; font-size: 13.5px; color: #444; line-height: 1.5;" id="alerta_liquidez_texto"></p>
-        </div>
-
-        <div class="comparativo-cards">
-          <!-- CARD HOJE -->
-          <div class="card-impacto card-hoje reveal delay-2">
-            <div class="label-periodo">Cenário Atual</div>
-            <div class="valor-principal" id="prejuizo_atual_valor">R$ 0,00</div>
-            <div class="percentual-badge" id="prejuizo_atual_pct">0% do total</div>
-            <div class="sub-info">Base tributável: <span id="base_atual">R$ 0,00</span></div>
-          </div>
-
-          <!-- SETA OU DIVISOR -->
-          <div class="divisor-impacto">
-            <i class="arrow-icon"></i>
-          </div>
-
-          <!-- CARD FUTURO -->
-          <div class="card-impacto card-futuro reveal delay-3">
-            <div class="label-periodo">Projeção Futura</div>
-            <div class="valor-principal" id="prejuizo_projetado_valor">R$ 0,00</div>
-            <div class="percentual-badge secondary" id="prejuizo_projetado_pct">0% do total</div>
-            <div class="sub-info">Base tributável: <span id="base_projetada">R$ 0,00</span></div>
-          </div>
-        </div>
-
-        <div class="footer-note">
-          <p><i class="icon-info"></i> O cálculo considera a dedução da Previdência Privada e o impacto do Regime de
-            Bens selecionado.</p>
-        </div>
-
-      </div>
-    </main>
-
-  </div>
-
-  <br>
-
-  <!-- BOTÃO -->
-  <div style="text-align:center;">
-    <button onclick="abrirPreview()" class="btn-pdf">
-      Visualizar Relatório PDF
-    </button>
-  </div>
-
-  <br>
-
-  <!-- ===== RELATÓRIO ===== -->
-  <!-- Container técnico do Relatório (escondido via posição fixa) -->
-  <div id="area-relatorio" class="pdf-container" style="position: fixed; top: -9999px; left: 0; z-index: -1;">
-
-    <!-- CAPA -->
-    <div class="pagina capa">
-      <div class="capa-bg-glow"></div>
-      <div class="logo-capa">Pace <span>Capital</span></div>
-
-      <div class="capa-content">
-        <h1>Planejamento Patrimonial</h1>
-        <div class="capa-divider"></div>
-      </div>
-      <div class="capa-footer">
-        <p>Preparado para:</p>
-        <h3 id="nome_cliente_capa">Cliente</h3>
-        <p id="data_pdf"></p>
-      </div>
-    </div><!-- PÁGINA 1: RESUMO E NARRATIVA -->
-    <div class="pagina">
-      <div class="header-relatorio">
-        <div class="logo-relatorio">Pace Capital</div>
-        <div class="tag-relatorio">Resumo Executivo</div>
-      </div>
-
-      <div class="resumo-executivo-caixa">
-        <div class="box-resumo">
-          <div class="resumo-item">
-            <p>Patrimônio Total Analisado</p>
-            <h1 id="total_pdf">R$ 0,00</h1>
-          </div>
-          <div class="resumo-item destaque-prejuizo">
-            <p>Prejuízo Tributário (Cenário Atual)</p>
-            <h2 id="prejuizo_atual_pdf">R$ 0,00</h2>
-          </div>
-          <div class="resumo-item">
-            <p>Patrimônio Projetado (Futuro)</p>
-            <h2 id="total_projetado_pdf">R$ 0,00</h2>
-          </div>
-          <div class="resumo-item destaque-prejuizo">
-            <p>Prejuízo Tributário (Cenário Projetado)</p>
-            <h2 id="prejuizo_projetado_pdf">R$ 0,00</h2>
-          </div>
-        </div>
-      </div>
-
-      <div id="narrativa_ia" class="narrativa-ia">
-        Carregando análise estratégica...
-      </div>
-
-      <div class="footer-relatorio">
-        Página 1 | Relatório de Planejamento Pace
       </div>
     </div>
 
-    <!-- PÁGINA 2: EVOLUÇÃO, FAMÍLIA E SUCESSÃO -->
-    <div class="pagina nova-pagina">
-      <div class="header-relatorio">
-        <div class="logo-relatorio">Pace Capital</div>
-        <div class="tag-relatorio">Planejamento e Sucessão</div>
-      </div>
-
-      <!-- EVOLUÇÃO -->
-      <div style="margin-bottom: 20px;">
-        <h3 style="color: var(--primary); margin-top: 0; font-size: 18px; text-align: center; margin-bottom: 5px;">
-          Evolução Patrimonial Projetada</h3>
-        <div class="grafico-evolucao-pdf" style="height: 220px; margin-bottom: 15px;">
-          <canvas id="grafico_evolucao"></canvas>
+    <!-- SEÇÃO SEGUNDA MORTE -->
+    <div id="pagina_segunda_morte" style="display: none; margin-top: 40px;">
+      <h3 style="color: var(--primary); margin-top: 10px; font-size: 20px; text-align: center; margin-bottom: 20px;">
+        Simulação de Segunda sucessão</h3>
+      <div
+        style="display: flex; align-items: center; justify-content: center; gap: 40px; background: #fcfdfe; padding: 25px; border-radius: 16px; border: 1px solid #f0f4f9; box-shadow: 0 4px 20px rgba(0,0,0,0.02);">
+        <div style="width: 190px; height: 190px; position: relative;">
+          <canvas id="grafico_segunda_morte"></canvas>
         </div>
+        <div id="lista_segunda_morte" style="flex: 1; max-width: 420px; font-size: 13px;"></div>
       </div>
 
-      <!-- ESTRUTURA FAMILIAR -->
-      <div id="estrutura_familiar_container" class="estrutura-familiar-pdf" style="margin: 0 0 20px 0; padding: 10px;">
+      <div id="alerta_destino"
+        style="margin-top: 25px; padding: 20px; border-radius: 12px; font-size: 13px; line-height: 1.6; border: 1px solid rgba(11, 83, 184, 0.1);">
         <!-- Injetado via JS -->
       </div>
-
-      <div class="footer-relatorio">
-        Página 2 | Relatório de Planejamento Pace
-      </div>
     </div>
 
-    <!-- PÁGINA 3: ESTRATÉGIAS E CONSEQUÊNCIAS -->
-    <div class="pagina nova-pagina">
-      <div class="header-relatorio">
-        <div class="logo-relatorio">Pace Capital</div>
-        <div class="tag-relatorio">Estratégias Sucessórias</div>
-      </div>
-
-      <div style="margin-bottom: 40px; margin-top: 20px;">
-        <!-- TABELA DE HERANÇA LÍQUIDA (ESTRATÉGIA 1) -->
-        <div style="margin-bottom: 30px; background: #fcfdfe; padding: 25px; border-radius: 16px; border: 1px solid #f0f4f9; box-shadow: 0 4px 20px rgba(0,0,0,0.02);">
-          <h4 style="color: var(--primary); margin: 0 0 15px 0; font-size: 16px; font-weight: 700; border-bottom: 2px solid var(--primary); padding-bottom: 8px;">Estratégia 1 | Não realizar planejamento</h4>
-          <table style="width: 100%; border-collapse: collapse; font-family: 'Outfit', sans-serif; font-size: 14px;">
-            <thead>
-              <tr style="border-bottom: 1.5px solid #e1e8f0; text-align: left;">
-                <th style="padding: 10px 0; color: var(--text-muted); font-weight: 600; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">Item</th>
-                <th style="padding: 10px 0; text-align: right; color: var(--text-muted); font-weight: 600; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">Valor</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr style="border-bottom: 1px solid #f0f4f9;">
-                <td style="padding: 12px 0; color: var(--text-main); font-weight: 500;">Patrimônio Inicial</td>
-                <td style="padding: 12px 0; text-align: right; font-weight: 600; color: var(--text-main);" id="tabela_patrimonio_inicial">R$ 0,00</td>
-              </tr>
-              <tr style="border-bottom: 1px solid #f0f4f9;">
-                <td style="padding: 12px 0; color: var(--text-main); font-weight: 500;">Custos da sucessão</td>
-                <td style="padding: 12px 0; text-align: right; font-weight: 600; color: #E53935;" id="tabela_custos_sucessao">R$ 0,00</td>
-              </tr>
-              <tr style="font-size: 15px; font-weight: 700;">
-                <td style="padding: 16px 0; color: var(--primary);">Herança líquida</td>
-                <td style="padding: 16px 0; text-align: right; color: var(--primary);" id="tabela_heranca_liquida">R$ 0,00</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <!-- TABELA DE CONSEQUÊNCIAS (PÓS ESTRATÉGIA 1) -->
-        <div style="margin-bottom: 35px; background: #fcfdfe; padding: 25px; border-radius: 16px; border: 1px solid #f0f4f9; box-shadow: 0 4px 20px rgba(0,0,0,0.02);">
-          <h4 style="color: #E53935; margin: 0 0 15px 0; font-size: 16px; font-weight: 700; border-bottom: 2px solid #E53935; padding-bottom: 8px;">Consequências</h4>
-          <table style="width: 100%; border-collapse: collapse; font-family: 'Outfit', sans-serif; font-size: 14px;">
-            <thead>
-              <tr style="border-bottom: 1.5px solid #e1e8f0; text-align: left;">
-                <th style="padding: 10px 0; color: var(--text-muted); font-weight: 600; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">Possíveis impactos</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr style="border-bottom: 1px solid #f0f4f9;" id="impacto_venda_imoveis">
-                <td style="padding: 12px 0; color: var(--text-main); font-weight: 500;">Venda de imóveis</td>
-              </tr>
-              <tr style="border-bottom: 1px solid #f0f4f9;" id="impacto_venda_investimentos">
-                <td style="padding: 12px 0; color: var(--text-main); font-weight: 500;">Venda de investimentos</td>
-              </tr>
-              <tr style="border-bottom: 1px solid #f0f4f9;" id="impacto_venda_empresas">
-                <td style="padding: 12px 0; color: var(--text-main); font-weight: 500;">Venda de participação societária</td>
-              </tr>
-              <tr style="border-bottom: 1px solid #f0f4f9;">
-                <td style="padding: 12px 0; color: var(--text-main); font-weight: 500;">Liquidação de ativos em momento desfavorável</td>
-              </tr>
-              <tr style="border-bottom: 1px solid #f0f4f9;">
-                <td style="padding: 12px 0; color: var(--text-main); font-weight: 500;">Possível perda de valor patrimonial</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <!-- TABELA ESTRATÉGIA 2: DOAÇÃO DENTRO DA ISENÇÃO -->
-        <div style="margin-bottom: 35px; background: #fcfdfe; padding: 25px; border-radius: 16px; border: 1px solid #f0f4f9; box-shadow: 0 4px 20px rgba(0,0,0,0.02);">
-          <h4 style="color: var(--primary); margin: 0 0 15px 0; font-size: 16px; font-weight: 700; border-bottom: 2px solid var(--primary); padding-bottom: 8px;">Estratégia 2 | Doação dentro da isenção</h4>
-          <table style="width: 100%; border-collapse: collapse; font-family: 'Outfit', sans-serif; font-size: 14px;">
-            <thead>
-              <tr style="border-bottom: 1.5px solid #e1e8f0; text-align: left;">
-                <th style="padding: 10px 0; color: var(--text-muted); font-weight: 600; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">Informação</th>
-                <th style="padding: 10px 0; text-align: right; color: var(--text-muted); font-weight: 600; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">Resultado</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr style="border-bottom: 1px solid #f0f4f9;">
-                <td style="padding: 12px 0; color: var(--text-main); font-weight: 500;">Valor necessário</td>
-                <td style="padding: 12px 0; text-align: right; font-weight: 600; color: var(--text-main);" id="estrategia2_valor_necessario">R$ 0,00</td>
-              </tr>
-              <tr style="border-bottom: 1px solid #f0f4f9;">
-                <td style="padding: 12px 0; color: var(--text-main); font-weight: 500;">Limite anual de isenção (hipotético)</td>
-                <td style="padding: 12px 0; text-align: right; font-weight: 600; color: var(--text-main);" id="estrategia2_limite_isencao">R$ 100.000,00</td>
-              </tr>
-              <tr>
-                <td style="padding: 12px 0; color: var(--text-main); font-weight: 500;">Tempo estimado para concluir a doação</td>
-                <td style="padding: 12px 0; text-align: right; font-weight: 600; color: var(--text-main);" id="estrategia2_tempo_estimado">—</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <!-- TABELA DE RISCOS DA ESTRATÉGIA 2 -->
-        <div style="margin-bottom: 35px; background: #fcfdfe; padding: 25px; border-radius: 16px; border: 1px solid #f0f4f9; box-shadow: 0 4px 20px rgba(0,0,0,0.02);">
-          <h4 style="color: #E53935; margin: 0 0 15px 0; font-size: 16px; font-weight: 700; border-bottom: 2px solid #E53935; padding-bottom: 8px;">Riscos</h4>
-          <table style="width: 100%; border-collapse: collapse; font-family: 'Outfit', sans-serif; font-size: 14px;">
-            <thead>
-              <tr style="border-bottom: 1.5px solid #e1e8f0; text-align: left;">
-                <th style="padding: 10px 0; color: var(--text-muted); font-weight: 600; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">Risco</th>
-                <th style="padding: 10px 0; text-align: right; color: var(--text-muted); font-weight: 600; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">Impacto</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr style="border-bottom: 1px solid #f0f4f9;">
-                <td style="padding: 12px 0; color: var(--text-main); font-weight: 500;">Divórcio do beneficiário</td>
-                <td style="padding: 12px 0; text-align: right; font-weight: 600; color: #E53935;">Alto</td>
-              </tr>
-              <tr style="border-bottom: 1px solid #f0f4f9;">
-                <td style="padding: 12px 0; color: var(--text-main); font-weight: 500;">Penhora por credores</td>
-                <td style="padding: 12px 0; text-align: right; font-weight: 600; color: #FF8F00;">Médio</td>
-              </tr>
-              <tr style="border-bottom: 1px solid #f0f4f9;">
-                <td style="padding: 12px 0; color: var(--text-main); font-weight: 500;">Falecimento do beneficiário</td>
-                <td style="padding: 12px 0; text-align: right; font-weight: 600; color: #E53935;">Alto</td>
-              </tr>
-              <tr style="border-bottom: 1px solid #f0f4f9;">
-                <td style="padding: 12px 0; color: var(--text-main); font-weight: 500;">Perda do controle patrimonial</td>
-                <td style="padding: 12px 0; text-align: right; font-weight: 600; color: #E53935;">Alto</td>
-              </tr>
-              <tr style="border-bottom: 1px solid #f0f4f9;">
-                <td style="padding: 12px 0; color: var(--text-main); font-weight: 500;">Mudança na legislação</td>
-                <td style="padding: 12px 0; text-align: right; font-weight: 600; color: #FF8F00;">Médio</td>
-              </tr>
-              <tr style="border-bottom: 1px solid #f0f4f9;">
-                <td style="padding: 12px 0; color: var(--text-main); font-weight: 500;">Necessidade futura do patrimônio</td>
-                <td style="padding: 12px 0; text-align: right; font-weight: 600; color: #E53935;">Alto</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <div class="footer-relatorio">
-        Página 3 | Relatório de Planejamento Pace
-      </div>
+    <!-- CONTAINER DA PREVIDÊNCIA -->
+    <div id="container_previdencia_sucessao"
+      style="margin-top: 25px; padding: 20px; border-radius: 12px; font-size: 13.5px; line-height: 1.6; border: 1px solid rgba(111, 66, 193, 0.15); background: rgba(111, 66, 193, 0.03); color: #512da8; display: none;">
+      <!-- Injetado via JS -->
     </div>
 
-    <!-- PÁGINA 4: DETALHAMENTO DA SUCESSÃO -->
-    <div class="pagina nova-pagina">
-      <div class="header-relatorio">
-        <div class="logo-relatorio">Pace Capital</div>
-        <div class="tag-relatorio">Detalhamento da Sucessão</div>
-      </div>
-
-      <div style="margin-bottom: 40px; margin-top: 20px;">
-        <h3 style="color: var(--primary); margin-top: 0; font-size: 20px; text-align: center; margin-bottom: 20px;">
-          Divisão Estimada do Patrimônio (Herança)</h3>
-        <div
-          style="display: flex; align-items: center; justify-content: center; gap: 40px; background: #fcfdfe; padding: 25px; border-radius: 16px; border: 1px solid #f0f4f9; box-shadow: 0 4px 20px rgba(0,0,0,0.02);">
-          <div style="width: 190px; height: 190px; position: relative;">
-            <canvas id="grafico_partilha"></canvas>
-          </div>
-          <div id="lista_partilha" style="flex: 1; max-width: 420px; font-size: 14px;">
-            <!-- Preenchido via JS -->
-          </div>
-        </div>
-      </div>
-
-      <!-- SEÇÃO SEGUNDA MORTE -->
-      <div id="pagina_segunda_morte" style="display: none; margin-top: 40px;">
-        <h3 style="color: var(--primary); margin-top: 10px; font-size: 20px; text-align: center; margin-bottom: 20px;">
-          Simulação de Segunda sucessão</h3>
-        <div
-          style="display: flex; align-items: center; justify-content: center; gap: 40px; background: #fcfdfe; padding: 25px; border-radius: 16px; border: 1px solid #f0f4f9; box-shadow: 0 4px 20px rgba(0,0,0,0.02);">
-          <div style="width: 190px; height: 190px; position: relative;">
-            <canvas id="grafico_segunda_morte"></canvas>
-          </div>
-          <div id="lista_segunda_morte" style="flex: 1; max-width: 420px; font-size: 13px;"></div>
-        </div>
-        
-        <div id="alerta_destino" style="margin-top: 25px; padding: 20px; border-radius: 12px; font-size: 13px; line-height: 1.6; border: 1px solid rgba(11, 83, 184, 0.1);">
-          <!-- Injetado via JS -->
-        </div>
-      </div>
-
-      <!-- CONTAINER DA PREVIDÊNCIA -->
-      <div id="container_previdencia_sucessao" style="margin-top: 25px; padding: 20px; border-radius: 12px; font-size: 13.5px; line-height: 1.6; border: 1px solid rgba(111, 66, 193, 0.15); background: rgba(111, 66, 193, 0.03); color: #512da8; display: none;">
-        <!-- Injetado via JS -->
-      </div>
-
-      <div class="footer-relatorio">
-        Página 4 | Relatório de Planejamento Pace
-      </div>
-    </div>
-
-    <!-- PÁGINA 5: DISTRIBUIÇÃO DE ATIVOS -->
-    <div class="pagina nova-pagina">
-      <div class="header-relatorio">
-        <div class="logo-relatorio">Pace Capital</div>
-        <div class="tag-relatorio">Distribuição de Ativos</div>
-      </div>
-
-      <h3 style="color: var(--primary); margin-top: 0; font-size: 20px; text-align: center; margin-bottom: 30px;">
-        Classes e Alocação de Ativos</h3>
-      <div class="graficos-grid">
-        <div class="grafico-item" id="container_grafico_geral">
-          <h4 style="font-size: 14px; text-align: center; margin-bottom: 10px; color: #666;">Visão Geral</h4>
-          <div class="grafico-pdf-sm"><canvas id="grafico_geral"></canvas></div>
-        </div>
-        <div class="grafico-item" id="container_grafico_aplicacoes">
-          <h4 style="font-size: 14px; text-align: center; margin-bottom: 10px; color: #666;">Liquidez / Aplicações</h4>
-          <div class="grafico-pdf-sm"><canvas id="grafico_aplicacoes"></canvas></div>
-        </div>
-        <div class="grafico-item" id="container_grafico_imoveis">
-          <h4 style="font-size: 14px; text-align: center; margin-bottom: 10px; color: #666;">Imóveis</h4>
-          <div class="grafico-pdf-sm"><canvas id="grafico_imoveis"></canvas></div>
-        </div>
-        <div class="grafico-item" id="container_grafico_empresas">
-          <h4 style="font-size: 14px; text-align: center; margin-bottom: 10px; color: #666;">Participações Societárias</h4>
-          <div class="grafico-pdf-sm"><canvas id="grafico_empresas"></canvas></div>
-        </div>
-      </div>
-
-      <div class="footer-relatorio">
-        Página 5 | Relatório de Planejamento Pace
-      </div>
-    </div>
-
-
-
-  </div>
-
-  <!-- ===== MODAL PREVIEW ===== -->
-  <div id="modal-preview" class="modal-preview">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h2>Preview do Relatório</h2>
-        <div class="modal-actions">
-          <button class="btn-secundario" onclick="fecharPreview()">Fechar</button>
-          <button onclick="gerarPDF()">Download PDF</button>
-        </div>
-      </div>
-      <div class="modal-body" id="modal-body-pdf">
-        <!-- O conteúdo do relatório será clonado aqui -->
-      </div>
+    <div class="footer-relatorio">
+      Página 3 | Relatório de Planejamento Pace
     </div>
   </div>
 
-  <script src="script/tributario.js"></script>
+  <!-- PÁGINA 4: DISTRIBUIÇÃO DE ATIVOS -->
+  <div class="pagina nova-pagina">
+    <div class="header-relatorio">
+      <div class="logo-relatorio">Pace Capital</div>
+      <div class="tag-relatorio">Distribuição de Ativos</div>
+    </div>
+
+    <h3 style="color: var(--primary); margin-top: 0; font-size: 20px; text-align: center; margin-bottom: 30px;">
+      Classes e Alocação de Ativos</h3>
+    <div class="graficos-grid">
+      <div class="grafico-item" id="container_grafico_geral">
+        <h4 style="font-size: 14px; text-align: center; margin-bottom: 10px; color: #666;">Visão Geral</h4>
+        <div class="grafico-pdf-sm"><canvas id="grafico_geral"></canvas></div>
+      </div>
+      <div class="grafico-item" id="container_grafico_aplicacoes">
+        <h4 style="font-size: 14px; text-align: center; margin-bottom: 10px; color: #666;">Liquidez / Aplicações</h4>
+        <div class="grafico-pdf-sm"><canvas id="grafico_aplicacoes"></canvas></div>
+      </div>
+      <div class="grafico-item" id="container_grafico_imoveis">
+        <h4 style="font-size: 14px; text-align: center; margin-bottom: 10px; color: #666;">Imóveis</h4>
+        <div class="grafico-pdf-sm"><canvas id="grafico_imoveis"></canvas></div>
+      </div>
+      <div class="grafico-item" id="container_grafico_empresas">
+        <h4 style="font-size: 14px; text-align: center; margin-bottom: 10px; color: #666;">Participações Societárias
+        </h4>
+        <div class="grafico-pdf-sm"><canvas id="grafico_empresas"></canvas></div>
+      </div>
+    </div>
+
+    <div class="footer-relatorio">
+      Página 4 | Relatório de Planejamento Pace
+    </div>
+  </div>
+
+
+
+</div>
+
+<!-- ===== MODAL PREVIEW ===== -->
+<div id="modal-preview" class="modal-preview">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>Preview do Relatório</h2>
+      <div class="modal-actions">
+        <button class="btn-secundario" onclick="fecharPreview()">Fechar</button>
+        <button onclick="gerarPDF()">Download PDF</button>
+      </div>
+    </div>
+    <div class="modal-body" id="modal-body-pdf">
+      <!-- O conteúdo do relatório será clonado aqui -->
+    </div>
+  </div>
+</div>
+
+<script src="script/tributario.js"></script>
 
 </body>
 

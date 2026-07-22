@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿let graficoGeral, graficoAplicacoes, graficoImoveis, graficoEmpresas;
+let graficoGeral, graficoAplicacoes, graficoImoveis, graficoEmpresas;
 Chart.register(ChartDataLabels);
 
 // =========================
@@ -403,6 +403,36 @@ function criarGraficos(dados, scope = document) {
   }
 }
 
+// Helper de Formatação de Moeda
+function formatarMoeda(input) {
+  let value = input.value.replace(/\D/g, "");
+  if (value === "") {
+    input.value = "";
+    return;
+  }
+  let val = (Number(value) / 100).toLocaleString("pt-BR", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  });
+  input.value = val;
+}
+
+function obterValorInput(input) {
+  if (!input || !input.value) return 0;
+  let valor = input.value
+    .replace(/\./g, "")
+    .replace(",", ".");
+  return Number(valor) || 0;
+}
+
+function checkFilled(el) {
+  if (el.value && el.value !== "0" && el.value !== "" && el.value !== "Selecione") {
+    el.classList.add("filled");
+  } else {
+    el.classList.remove("filled");
+  }
+}
+
 // =========================
 // SIMULADOR DE PREJUIZO PREMIUM
 // =========================
@@ -414,6 +444,50 @@ function initPrejuizo() {
     if (el) el.addEventListener("input", calcularPrejuizo);
   });
 
+  const inputDoacao = document.getElementById("input_doacao_vida");
+  if (inputDoacao) {
+    inputDoacao.addEventListener("input", function () {
+      formatarMoeda(this);
+      checkFilled(this);
+      salvarInputsTributario();
+    });
+  }
+
+  const inputAvista = document.getElementById("input_doacao_avista");
+  if (inputAvista) {
+    inputAvista.addEventListener("input", function () {
+      formatarMoeda(this);
+      checkFilled(this);
+      salvarInputsTributario();
+    });
+  }
+
+  const inputPrevidencia = document.getElementById("input_previdencia");
+  if (inputPrevidencia) {
+    inputPrevidencia.addEventListener("input", function () {
+      formatarMoeda(this);
+      checkFilled(this);
+      salvarInputsTributario();
+    });
+  }
+
+  const inputSeguroIdade = document.getElementById("input_seguro_idade");
+  if (inputSeguroIdade) {
+    inputSeguroIdade.addEventListener("input", function () {
+      checkFilled(this);
+      salvarInputsTributario();
+    });
+  }
+
+  const inputSeguroCapital = document.getElementById("input_seguro_capital");
+  if (inputSeguroCapital) {
+    inputSeguroCapital.addEventListener("input", function () {
+      formatarMoeda(this);
+      checkFilled(this);
+      salvarInputsTributario();
+    });
+  }
+
   // Carrega os dados do resumo lateral
   carregarResumoSidebar();
 
@@ -424,6 +498,48 @@ function initPrejuizo() {
     if (salvos.itcmd) document.getElementById("taxa_itcmd").value = salvos.itcmd;
     if (salvos.honorarios) document.getElementById("taxa_honorarios").value = salvos.honorarios;
     if (salvos.custas) document.getElementById("taxa_custas").value = salvos.custas;
+    if (salvos.doacao) {
+      if (inputDoacao) {
+        const numericVal = Number(salvos.doacao) || 0;
+        inputDoacao.value = Math.round(numericVal * 100).toString();
+        formatarMoeda(inputDoacao);
+        checkFilled(inputDoacao);
+      }
+    }
+    if (salvos.doacao_avista) {
+      if (inputAvista) {
+        const numericVal = Number(salvos.doacao_avista) || 0;
+        inputAvista.value = Math.round(numericVal * 100).toString();
+        formatarMoeda(inputAvista);
+        checkFilled(inputAvista);
+      }
+    }
+    if (salvos.previdencia !== undefined && salvos.previdencia !== null) {
+      if (inputPrevidencia) {
+        const numericVal = Number(salvos.previdencia) || 0;
+        if (numericVal > 0) {
+          inputPrevidencia.value = Math.round(numericVal * 100).toString();
+          formatarMoeda(inputPrevidencia);
+          checkFilled(inputPrevidencia);
+        }
+      }
+    }
+    if (salvos.seguro_idade) {
+      if (inputSeguroIdade) {
+        inputSeguroIdade.value = salvos.seguro_idade;
+        checkFilled(inputSeguroIdade);
+      }
+    }
+    if (salvos.seguro_capital !== undefined && salvos.seguro_capital !== null) {
+      if (inputSeguroCapital) {
+        const numericVal = Number(salvos.seguro_capital) || 0;
+        if (numericVal > 0) {
+          inputSeguroCapital.value = Math.round(numericVal * 100).toString();
+          formatarMoeda(inputSeguroCapital);
+          checkFilled(inputSeguroCapital);
+        }
+      }
+    }
   }
 
   // Listeners para salvar ao mudar
@@ -440,8 +556,13 @@ function salvarInputsTributario() {
   const itcmd = document.getElementById("taxa_itcmd")?.value;
   const honorarios = document.getElementById("taxa_honorarios")?.value;
   const custas = document.getElementById("taxa_custas")?.value;
+  const doacao = obterValorInput(document.getElementById("input_doacao_vida"));
+  const doacao_avista = obterValorInput(document.getElementById("input_doacao_avista"));
+  const previdencia = obterValorInput(document.getElementById("input_previdencia"));
+  const seguro_idade = document.getElementById("input_seguro_idade")?.value || "";
+  const seguro_capital = obterValorInput(document.getElementById("input_seguro_capital"));
 
-  sessionStorage.setItem("tributario_inputs", JSON.stringify({ uf, itcmd, honorarios, custas }));
+  sessionStorage.setItem("tributario_inputs", JSON.stringify({ uf, itcmd, honorarios, custas, doacao, doacao_avista, previdencia, seguro_idade, seguro_capital }));
   calcularPrejuizo();
 }
 
@@ -594,8 +715,37 @@ function calcularPrejuizo() {
   if (elInvestimentos) elInvestimentos.style.display = temInvestimentos ? "table-row" : "none";
   if (elEmpresas) elEmpresas.style.display = temEmpresas ? "table-row" : "none";
 
+  // Lógica de Doação em Vida (Opção 1)
+  const inputDoacao = document.getElementById("input_doacao_vida");
+  let doacaoVal = 0;
+  if (inputDoacao) {
+    doacaoVal = obterValorInput(inputDoacao);
+  }
+
+  const elTempoAtual = document.getElementById("tempo_atual_doacao");
+  const elTempoProj = document.getElementById("tempo_projetado_doacao");
+
+  function formatarTempoMeses(prejuizo, doacaoAnual) {
+    if (doacaoAnual <= 0 || prejuizo <= 0) return "—";
+    const doacaoMensal = doacaoAnual / 12;
+    const totalMeses = Math.ceil(prejuizo / doacaoMensal);
+    const anos = Math.floor(totalMeses / 12);
+    const meses = totalMeses % 12;
+    if (anos === 0) return `${meses} ${meses === 1 ? "mês" : "meses"}`;
+    if (meses === 0) return `${anos} ${anos === 1 ? "ano" : "anos"}`;
+    return `${anos} ${anos === 1 ? "ano" : "anos"} e ${meses} ${meses === 1 ? "mês" : "meses"}`;
+  }
+
+  if (doacaoVal > 0) {
+    if (elTempoAtual) elTempoAtual.innerText = formatarTempoMeses(prejuizoAtual, doacaoVal);
+    if (elTempoProj) elTempoProj.innerText = formatarTempoMeses(prejuizoProjetado, doacaoVal);
+  } else {
+    if (elTempoAtual) elTempoAtual.innerText = "—";
+    if (elTempoProj) elTempoProj.innerText = "—";
+  }
+
   // Preenche tabela da Estratégia 2: Doação dentro da isenção
-  const LIMITE_ISENCAO_ANUAL = 100000; // R$ 100.000 hipotético
+  const LIMITE_ISENCAO_ANUAL = doacaoVal > 0 ? doacaoVal : 96050;
   const elE2Valor = document.getElementById("estrategia2_valor_necessario");
   const elE2Limite = document.getElementById("estrategia2_limite_isencao");
   const elE2Tempo = document.getElementById("estrategia2_tempo_estimado");
@@ -603,12 +753,186 @@ function calcularPrejuizo() {
   if (elE2Valor) elE2Valor.innerText = "R$ " + prejuizoAtual.toLocaleString("pt-BR", { maximumFractionDigits: 0 });
   if (elE2Limite) elE2Limite.innerText = "R$ " + LIMITE_ISENCAO_ANUAL.toLocaleString("pt-BR", { maximumFractionDigits: 0 });
   if (elE2Tempo) {
-    if (prejuizoAtual > 0) {
-      const anosEstimados = Math.ceil(prejuizoAtual / LIMITE_ISENCAO_ANUAL);
-      elE2Tempo.innerText = `Aproximadamente ${anosEstimados} ${anosEstimados === 1 ? "ano" : "anos"}`;
-    } else {
-      elE2Tempo.innerText = "—";
+    const tempoEstimado = formatarTempoMeses(prejuizoAtual, LIMITE_ISENCAO_ANUAL);
+    elE2Tempo.innerText = tempoEstimado !== "—" ? `Aproximadamente ${tempoEstimado}` : "—";
+  }
+
+  // Opção 2: Doação à vista com incidência de ITCMD
+  const inputAvista = document.getElementById("input_doacao_avista");
+  let avistaVal = 0;
+  if (inputAvista) {
+    if (inputAvista.value === "" && !inputAvista.dataset.initialized && prejuizoAtual > 0) {
+      inputAvista.value = Math.round(prejuizoAtual * 100).toString();
+      formatarMoeda(inputAvista);
+      checkFilled(inputAvista);
+      inputAvista.dataset.initialized = "true";
     }
+    avistaVal = obterValorInput(inputAvista);
+  }
+
+  const elAvistaITCMD = document.getElementById("avista_custo_itcmd");
+  const elAvistaTotal = document.getElementById("avista_custo_total");
+
+  if (avistaVal > 0) {
+    const fmt = (v) => "R$ " + v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    
+    if (avistaVal <= 96050) {
+      // Isento de ITCMD
+      if (elAvistaITCMD) {
+        elAvistaITCMD.innerText = "Isento";
+        elAvistaITCMD.style.backgroundColor = "rgba(29, 111, 66, 0.1)";
+        elAvistaITCMD.style.color = "#1D6F42";
+      }
+      if (elAvistaTotal) elAvistaTotal.innerText = fmt(avistaVal);
+    } else {
+      // Com incidência de ITCMD: incide sobre o valor que exceder R$ 96.050,00
+      const custoITCMDAvista = (avistaVal - 96050) * (itcmd / 100);
+      const totalAvista = avistaVal + custoITCMDAvista;
+      if (elAvistaITCMD) {
+        elAvistaITCMD.innerText = fmt(custoITCMDAvista);
+        elAvistaITCMD.style.backgroundColor = "rgba(229, 57, 53, 0.1)";
+        elAvistaITCMD.style.color = "#E53935";
+      }
+      if (elAvistaTotal) elAvistaTotal.innerText = fmt(totalAvista);
+    }
+  } else {
+    if (elAvistaITCMD) {
+      elAvistaITCMD.innerText = "—";
+      elAvistaITCMD.style.backgroundColor = "";
+      elAvistaITCMD.style.color = "";
+    }
+    if (elAvistaTotal) elAvistaTotal.innerText = "—";
+  }
+
+  // Opção 3: Previdência
+  const inputPrevidencia = document.getElementById("input_previdencia");
+  let previdenciaVal = 0;
+  if (inputPrevidencia) {
+    if (inputPrevidencia.value === "" && !inputPrevidencia.dataset.initialized) {
+      const dadosPatrimonio = JSON.parse(sessionStorage.getItem("patrimonio_dados")) || {};
+      const prevPatrimonio = parseValor(dadosPatrimonio.prev);
+      if (prevPatrimonio > 0) {
+        inputPrevidencia.value = Math.round(prevPatrimonio * 100).toString();
+        formatarMoeda(inputPrevidencia);
+        checkFilled(inputPrevidencia);
+      }
+      inputPrevidencia.dataset.initialized = "true";
+    }
+    previdenciaVal = obterValorInput(inputPrevidencia);
+  }
+
+  const elPrevImposto = document.getElementById("previdencia_imposto");
+  const elPrevTotal = document.getElementById("previdencia_custo_total");
+
+  if (previdenciaVal > 0) {
+    const fmt = (v) => "R$ " + v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const LIMITE_ISENTO_PREV = 600000;
+
+    if (previdenciaVal <= LIMITE_ISENTO_PREV) {
+      if (elPrevImposto) {
+        elPrevImposto.innerText = "Isento";
+        elPrevImposto.style.backgroundColor = "rgba(29, 111, 66, 0.1)";
+        elPrevImposto.style.color = "#1D6F42";
+      }
+      if (elPrevTotal) elPrevTotal.innerText = fmt(previdenciaVal);
+    } else {
+      const excedente = previdenciaVal - LIMITE_ISENTO_PREV;
+      const impostoPrevidencia = excedente * 0.05;
+      const totalComImposto = previdenciaVal + impostoPrevidencia;
+
+      if (elPrevImposto) {
+        elPrevImposto.innerText = fmt(impostoPrevidencia);
+        elPrevImposto.style.backgroundColor = "rgba(229, 57, 53, 0.1)";
+        elPrevImposto.style.color = "#E53935";
+      }
+      if (elPrevTotal) elPrevTotal.innerText = fmt(totalComImposto);
+    }
+  } else {
+    if (elPrevImposto) {
+      elPrevImposto.innerText = "—";
+      elPrevImposto.style.backgroundColor = "";
+      elPrevImposto.style.color = "";
+    }
+    if (elPrevTotal) elPrevTotal.innerText = "—";
+  }
+
+  // Opção 4: Seguro Sucessão
+  const TABELA_SEGURO_SUCESSAO = {
+    25: 3483.96, 26: 3563.00, 27: 3646.00, 28: 3734.00, 29: 3826.00,
+    30: 3923.00, 31: 4024.00, 32: 4130.00, 33: 4237.00, 34: 4341.00,
+    35: 4443.12, 36: 4565.00, 37: 4691.00, 38: 4821.00, 39: 4956.00,
+    40: 5096.00, 41: 5241.00, 42: 5392.00, 43: 5548.00, 44: 5710.00,
+    45: 5878.00, 46: 6053.00, 47: 6234.00, 48: 6421.00, 49: 6615.00,
+    50: 6817.00, 51: 7026.00, 52: 7243.00, 53: 7469.00, 54: 7704.00,
+    55: 7949.00, 56: 8204.00, 57: 8469.00, 58: 8745.00, 59: 9032.00,
+    60: 9332.00, 61: 9445.00, 62: 9555.00, 63: 9638.00, 64: 9662.00,
+    65: 9672.48, 66: 9912.00, 67: 10165.00, 68: 10433.00, 69: 10715.00,
+    70: 11014.00, 71: 11329.00, 72: 11662.00, 73: 12013.00, 74: 12384.00
+  };
+
+  const inputSeguroIdade = document.getElementById("input_seguro_idade");
+  const inputSeguroCapital = document.getElementById("input_seguro_capital");
+  let seguroCapitalVal = 0;
+
+  if (inputSeguroCapital) {
+    if (inputSeguroCapital.value === "" && !inputSeguroCapital.dataset.initialized && prejuizoAtual > 0) {
+      inputSeguroCapital.value = Math.round(prejuizoAtual * 100).toString();
+      formatarMoeda(inputSeguroCapital);
+      checkFilled(inputSeguroCapital);
+      inputSeguroCapital.dataset.initialized = "true";
+    }
+    seguroCapitalVal = obterValorInput(inputSeguroCapital);
+  }
+
+  const elSeguroCapital = document.getElementById("seguro_resultado_capital");
+  const elSeguroParcela = document.getElementById("seguro_resultado_parcela");
+  const elSeguroQuitar = document.getElementById("seguro_resultado_quitar");
+  const elSeguroEconomia = document.getElementById("seguro_resultado_economia");
+
+  const fmt = (v) => "R$ " + v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+  if (seguroCapitalVal > 0) {
+    if (elSeguroCapital) elSeguroCapital.innerText = fmt(seguroCapitalVal);
+
+    const rawIdade = inputSeguroIdade ? parseInt(inputSeguroIdade.value, 10) : NaN;
+
+    if (!isNaN(rawIdade)) {
+      let idadeBusca = rawIdade;
+      if (idadeBusca < 25) idadeBusca = 25;
+      if (idadeBusca > 74) idadeBusca = 74;
+
+      const taxaAnualPor100k = TABELA_SEGURO_SUCESSAO[idadeBusca];
+      if (taxaAnualPor100k) {
+        const contribucaoAnualTotal = (seguroCapitalVal / 100000) * taxaAnualPor100k;
+        const parcelaMensal = contribucaoAnualTotal / 12;
+        const valorQuitar = parcelaMensal * 120;
+        const economia = seguroCapitalVal - valorQuitar;
+        const pctEconomia = seguroCapitalVal > 0 ? (economia / seguroCapitalVal) * 100 : 0;
+
+        if (elSeguroParcela) elSeguroParcela.innerText = fmt(parcelaMensal) + " / mês";
+        if (elSeguroQuitar) elSeguroQuitar.innerText = fmt(valorQuitar);
+        if (elSeguroEconomia) {
+          if (economia > 0) {
+            elSeguroEconomia.innerText = fmt(economia) + ` (${pctEconomia.toFixed(1)}%)`;
+            elSeguroEconomia.style.backgroundColor = "rgba(29, 111, 66, 0.1)";
+            elSeguroEconomia.style.color = "#1D6F42";
+          } else {
+            elSeguroEconomia.innerText = fmt(0);
+            elSeguroEconomia.style.backgroundColor = "";
+            elSeguroEconomia.style.color = "";
+          }
+        }
+      }
+    } else {
+      if (elSeguroParcela) elSeguroParcela.innerText = "Informe a idade";
+      if (elSeguroQuitar) elSeguroQuitar.innerText = "Informe a idade";
+      if (elSeguroEconomia) elSeguroEconomia.innerText = "Informe a idade";
+    }
+  } else {
+    if (elSeguroCapital) elSeguroCapital.innerText = "—";
+    if (elSeguroParcela) elSeguroParcela.innerText = "—";
+    if (elSeguroQuitar) elSeguroQuitar.innerText = "—";
+    if (elSeguroEconomia) elSeguroEconomia.innerText = "—";
   }
 
   gerarNarrativaIA(totalAtual, prejuizoAtual, regime);

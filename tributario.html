@@ -250,33 +250,39 @@
         </div>
 
         <!-- OPÇÃO 3: Previdência -->
-        <div class="reducao-card reducao-card-previdencia">
-          <div class="reducao-col">
-            <label for="input_previdencia" class="input-title">3 - Previdência</label>
-            <p class="previdencia-descricao">
-              Aplicações de até <strong>R$ 600.000,00 / ano</strong> em fundos de previdência são <strong>isentas de
-                IOF</strong>. Acima desse valor, incide <strong>5% de IOF sobre o excedente</strong>.
-            </p>
-            <div class="input-wrapper">
-              <span class="currency-symbol">R$</span>
-              <input type="text" id="input_previdencia" placeholder="Digite o valor aplicado em previdência"
-                autocomplete="off">
+        <div class="reducao-card reducao-card-previdencia" style="flex-direction: column; gap: 15px;">
+          <div style="display: flex; gap: 30px; width: 100%;">
+            <div class="reducao-col">
+              <label for="input_previdencia" class="input-title">3 - Previdência</label>
+              <p class="previdencia-descricao">
+                Aplicações de até <strong>R$ 600.000,00 / ano</strong> em fundos de previdência são <strong>isentas de
+                  IOF</strong>. Acima desse valor, incide <strong>5% de IOF sobre o excedente</strong>.
+              </p>
+              <div class="input-wrapper">
+                <span class="currency-symbol">R$</span>
+                <input type="text" id="input_previdencia" placeholder="Digite o valor aplicado em previdência"
+                  autocomplete="off">
+              </div>
+              <span class="exemption-limit">Limite isento de IOF: R$ 600.000,00 / ano</span>
             </div>
-            <span class="exemption-limit">Limite isento de IOF: R$ 600.000,00 / ano</span>
+
+            <div class="reducao-col results-col">
+              <div class="results-title">Impacto Tributário da Previdência:</div>
+              <div class="results-values">
+                <div class="result-item">
+                  <span class="result-label">IOF sobre excedente (5%):</span>
+                  <span class="result-badge" id="previdencia_imposto">—</span>
+                </div>
+                <div class="result-item">
+                  <span class="result-label">Total (aplicação + IOF):</span>
+                  <span class="result-badge result-badge-total" id="previdencia_custo_total">—</span>
+                </div>
+              </div>
+            </div>
           </div>
 
-          <div class="reducao-col results-col">
-            <div class="results-title">Impacto Tributário da Previdência:</div>
-            <div class="results-values">
-              <div class="result-item">
-                <span class="result-label">IOF sobre excedente (5%):</span>
-                <span class="result-badge" id="previdencia_imposto">—</span>
-              </div>
-              <div class="result-item">
-                <span class="result-label">Total (aplicação + IOF):</span>
-                <span class="result-badge result-badge-total" id="previdencia_custo_total">—</span>
-              </div>
-            </div>
+          <div style="padding: 12px 16px; background: rgba(229, 57, 53, 0.06); border-left: 4px solid #E53935; border-radius: 10px; font-size: 12.5px; color: #c62828; line-height: 1.5;">
+            <strong>⚠️ Alerta Comportamental:</strong> Caso você coloque mais dinheiro em previdência, porém por comportamento os beneficiários acabam acessando esse dinheiro e utilizando no pagamento do prejuízo tributário, causando a diminuição da herança.
           </div>
         </div>
 
@@ -562,6 +568,9 @@
         <div style="display: flex; justify-content: space-between; font-size: 13px; background: #fff; padding: 10px 14px; border-radius: 8px; border: 1px solid #edf2f7;">
           <div><strong>IOF sobre Excedente:</strong> <span id="pdf_previdencia_imposto" style="font-weight: 700;">—</span></div>
           <div><strong>Total (Aplicação + IOF):</strong> <span id="pdf_previdencia_custo_total" style="color: #1D6F42; font-weight: 700;">—</span></div>
+        </div>
+        <div style="margin-top: 8px; padding: 8px 12px; background: rgba(229, 57, 53, 0.06); border-left: 3px solid #E53935; border-radius: 6px; font-size: 11px; color: #c62828; line-height: 1.4;">
+          <strong>⚠️ Alerta Comportamental:</strong> Caso você coloque mais dinheiro em previdência, porém por comportamento os beneficiários acabam acessando esse dinheiro e utilizando no pagamento do prejuízo tributário, causando a diminuição da herança.
         </div>
       </div>
 

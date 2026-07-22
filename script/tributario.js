@@ -938,9 +938,54 @@ function calcularPrejuizo() {
   gerarNarrativaIA(totalAtual, prejuizoAtual, regime);
   calcularPartilha(totalAtual, regime);
   calcularHolding(prejuizoAtual);
+  atualizarPreservacaoPDF();
 
   // Auto-save: persiste progressivamente no Supabase com debounce
   if (typeof dbAutoSalvar === "function") dbAutoSalvar();
+}
+
+function atualizarPreservacaoPDF() {
+  const elTempoAtual = document.getElementById("tempo_atual_doacao");
+  const elTempoProj = document.getElementById("tempo_projetado_doacao");
+  const elAvistaITCMD = document.getElementById("avista_custo_itcmd");
+  const elAvistaTotal = document.getElementById("avista_custo_total");
+  const elPrevImposto = document.getElementById("previdencia_imposto");
+  const elPrevTotal = document.getElementById("previdencia_custo_total");
+  const elSeguroCapital = document.getElementById("seguro_resultado_capital");
+  const elSeguroParcela = document.getElementById("seguro_resultado_parcela");
+  const elSeguroQuitar = document.getElementById("seguro_resultado_quitar");
+  const elSeguroEconomia = document.getElementById("seguro_resultado_economia");
+
+  const pdfTempoAtual = document.getElementById("pdf_tempo_atual_doacao");
+  const pdfTempoProj = document.getElementById("pdf_tempo_projetado_doacao");
+  const pdfAvistaITCMD = document.getElementById("pdf_avista_custo_itcmd");
+  const pdfAvistaTotal = document.getElementById("pdf_avista_custo_total");
+  const pdfPrevImposto = document.getElementById("pdf_previdencia_imposto");
+  const pdfPrevTotal = document.getElementById("pdf_previdencia_custo_total");
+  const pdfSeguroCapital = document.getElementById("pdf_seguro_capital");
+  const pdfSeguroParcela = document.getElementById("pdf_seguro_parcela");
+  const pdfSeguroQuitar = document.getElementById("pdf_seguro_quitar");
+  const pdfSeguroEconomia = document.getElementById("pdf_seguro_economia");
+
+  if (pdfTempoAtual && elTempoAtual) pdfTempoAtual.innerText = elTempoAtual.innerText;
+  if (pdfTempoProj && elTempoProj) pdfTempoProj.innerText = elTempoProj.innerText;
+
+  if (pdfAvistaITCMD && elAvistaITCMD) {
+    pdfAvistaITCMD.innerText = elAvistaITCMD.innerText;
+    pdfAvistaITCMD.style.color = elAvistaITCMD.style.color || "#E53935";
+  }
+  if (pdfAvistaTotal && elAvistaTotal) pdfAvistaTotal.innerText = elAvistaTotal.innerText;
+
+  if (pdfPrevImposto && elPrevImposto) {
+    pdfPrevImposto.innerText = elPrevImposto.innerText;
+    pdfPrevImposto.style.color = elPrevImposto.style.color || "#581c87";
+  }
+  if (pdfPrevTotal && elPrevTotal) pdfPrevTotal.innerText = elPrevTotal.innerText;
+
+  if (pdfSeguroCapital && elSeguroCapital) pdfSeguroCapital.innerText = elSeguroCapital.innerText;
+  if (pdfSeguroParcela && elSeguroParcela) pdfSeguroParcela.innerText = elSeguroParcela.innerText;
+  if (pdfSeguroQuitar && elSeguroQuitar) pdfSeguroQuitar.innerText = elSeguroQuitar.innerText;
+  if (pdfSeguroEconomia && elSeguroEconomia) pdfSeguroEconomia.innerText = elSeguroEconomia.innerText;
 }
 
 // =========================
